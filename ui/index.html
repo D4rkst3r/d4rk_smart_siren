@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8"/>
+<title>D4rk Smart Siren</title>
+<link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+  <div id="hud" class="hud hidden">
+
+    <!-- Top Row: HIDE / LAMP / [TITLE] / MODE / LIGHT -->
+    <div class="row row-top">
+      <button class="btn btn-util" id="btnHide">HIDE</button>
+      <button class="btn btn-util" id="btnLamp">LAMP</button>
+      <div class="panel-title-wrap">
+        <div class="panel-title" id="lblVehicle">SmartSirenSM</div>
+        <div class="panel-sub" id="lblSeat">Fahrer</div>
+      </div>
+      <button class="btn btn-util">MODE</button>
+      <button class="btn btn-light" id="btnLight">LIGHT</button>
+    </div>
+
+    <!-- Tone Row: MIX FAST + dynamische Töne + HORN -->
+    <div class="row row-tones" id="toneRow"></div>
+
+    <!-- Bottom Row: STOP -->
+    <div class="row row-bottom">
+      <button class="btn btn-stop" id="btnStop"><span class="btn-led"></span>STOP</button>
+    </div>
+
+  </div>
+<script src="app.js"></script>
+</body>
+</html>

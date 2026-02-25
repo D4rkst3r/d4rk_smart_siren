@@ -1,0 +1,333 @@
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@400;500;600;700;800&display=swap');
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  /* Panel chassis */
+  --chassis:       #2a2d32;
+  --chassis-hi:    #35383e;
+  --chassis-lo:    #1e2024;
+  --chassis-rim:   #3d4148;
+
+  /* Button faces */
+  --btn-face:      #c8c9cb;
+  --btn-face-hi:   #dddee0;
+  --btn-face-sh:   #9a9b9d;
+  --btn-top:       #e8e9eb;
+  --btn-shadow:    #707274;
+
+  /* Accents */
+  --red:           #d63031;
+  --red-hi:        #ff4d4d;
+  --amber:         #e17055;
+  --green:         #00b894;
+  --blue:          #0984e3;
+  --blue-hi:       #74b9ff;
+  --cyan:          #00cec9;
+
+  --text-btn:      #1a1b1d;
+  --text-dim:      #8a8c8f;
+  --text-title:    #e8e9eb;
+
+  --font:   'Barlow Condensed', sans-serif;
+  --mono:   'Share Tech Mono', monospace;
+
+  --tr: 0.08s ease;
+}
+
+html, body {
+  width: 100vw; height: 100vh;
+  background: transparent;
+  overflow: hidden;
+  font-family: var(--font);
+  pointer-events: none;
+}
+
+/* ── Panel position ────────────────────────────────────────── */
+.hud {
+  position: fixed;
+  bottom: 22px;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: none;
+
+  /* Chassis */
+  background: linear-gradient(160deg, var(--chassis-hi) 0%, var(--chassis) 40%, var(--chassis-lo) 100%);
+  border: 2px solid var(--chassis-rim);
+  border-radius: 6px;
+  padding: 8px 10px 9px;
+  width: 560px;
+
+  box-shadow:
+    0 2px 0 rgba(255,255,255,0.06) inset,
+    0 -1px 0 rgba(0,0,0,0.5) inset,
+    0 8px 32px rgba(0,0,0,0.7),
+    0 2px 6px rgba(0,0,0,0.5);
+
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  transition: opacity 0.2s, transform 0.2s;
+}
+.hud.hidden  { opacity: 0; transform: translateX(-50%) translateY(12px); }
+.hud.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* Engraved title line inside chassis */
+.hud::before {
+  content: '';
+  position: absolute;
+  top: 5px; left: 12px; right: 12px;
+  height: 1px;
+  background: rgba(0,0,0,0.35);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+/* ── Rows ──────────────────────────────────────────────────── */
+.row {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.row-top    { }
+.row-tones  { }
+.row-bottom { gap: 5px; }
+
+/* ── Button Base ───────────────────────────────────────────── */
+.btn {
+  /* Physical key look */
+  background: linear-gradient(180deg, var(--btn-top) 0%, var(--btn-face) 55%, var(--btn-face-sh) 100%);
+  border: 1px solid #888;
+  border-bottom: 2px solid var(--btn-shadow);
+  border-radius: 3px;
+  color: var(--text-btn);
+  font-family: var(--font);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  padding: 0;
+  height: 34px;
+  min-width: 44px;
+  cursor: pointer;
+  user-select: none;
+  pointer-events: all;
+  transition: all var(--tr);
+  position: relative;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.5);
+
+  /* Inset shadow for depth */
+  box-shadow:
+    0 1px 0 rgba(255,255,255,0.6) inset,
+    0 -1px 0 rgba(0,0,0,0.15) inset;
+}
+
+/* Pressed state */
+.btn:active, .btn.pressed {
+  background: linear-gradient(180deg, var(--btn-face-sh) 0%, var(--btn-face) 100%);
+  border-bottom-width: 1px;
+  transform: translateY(1px);
+  box-shadow:
+    0 1px 0 rgba(0,0,0,0.2) inset,
+    0 0 0 transparent;
+}
+
+/* ── Utility buttons (HIDE, LAMP, MODE) ─────────────────────── */
+.btn-util {
+  min-width: 44px;
+  background: linear-gradient(180deg, #bbbcbe 0%, #a8a9ab 60%, #8a8b8d 100%);
+  color: #222;
+}
+
+/* ── Panel Title Center ─────────────────────────────────────── */
+.panel-title-wrap {
+  flex: 1;
+  text-align: center;
+  padding: 2px 6px;
+  /* Engraved look */
+  background: linear-gradient(180deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.12) 100%);
+  border: 1px solid rgba(0,0,0,0.4);
+  border-radius: 3px;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.06);
+}
+.panel-title {
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: var(--text-title);
+  text-shadow: 0 0 10px rgba(255,255,255,0.15), 0 1px 2px rgba(0,0,0,0.8);
+  line-height: 1.2;
+}
+.panel-sub {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: var(--text-dim);
+  font-family: var(--mono);
+  line-height: 1;
+}
+
+/* ── LIGHT button – blue accent ────────────────────────────── */
+.btn-light {
+  background: linear-gradient(180deg, #4a9ee8 0%, var(--blue) 60%, #0666b0 100%);
+  border-color: #0555a0;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+}
+.btn-light.active {
+  background: linear-gradient(180deg, #74b9ff 0%, #0984e3 60%, #0555a0 100%);
+  box-shadow: 0 0 10px rgba(9,132,227,0.6), 0 1px 0 rgba(255,255,255,0.3) inset;
+  border-color: var(--blue-hi);
+}
+
+/* ── Tone buttons ───────────────────────────────────────────── */
+.btn-tone {
+  flex: 1;
+  height: 36px;
+  font-size: 10px;
+  letter-spacing: 0.03em;
+}
+.btn-tone.active {
+  background: linear-gradient(180deg, #ffe08a 0%, #f0a500 60%, #c07800 100%);
+  border-color: #a06000;
+  color: #3a1a00;
+  box-shadow:
+    0 0 8px rgba(240,165,0,0.5),
+    0 1px 0 rgba(255,255,255,0.4) inset;
+  text-shadow: 0 1px 0 rgba(255,255,0,0.3);
+}
+/* HORN – special amber */
+.btn-tone[data-id="horn"],
+.btn-tone[data-id="manual"] {
+  background: linear-gradient(180deg, #f0b46a 0%, var(--amber) 60%, #b05030 100%);
+  border-color: #904020;
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+}
+.btn-tone[data-id="horn"].active,
+.btn-tone[data-id="manual"].active,
+.btn-tone[data-id="horn"].pressed,
+.btn-tone[data-id="manual"].pressed  {
+  background: linear-gradient(180deg, #ffcc88 0%, var(--amber) 60%, #904020 100%);
+  box-shadow: 0 0 10px rgba(225,112,85,0.6), 0 1px 0 rgba(255,255,255,0.3) inset;
+}
+
+/* ── Slider ─────────────────────────────────────────────────── */
+.slider-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 8px;
+  background: rgba(0,0,0,0.25);
+  border: 1px solid rgba(0,0,0,0.4);
+  border-radius: 4px;
+  box-shadow: inset 0 1px 3px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.05);
+  min-width: 88px;
+  pointer-events: all;
+}
+.slider-track {
+  width: 72px;
+  height: 10px;
+  background: linear-gradient(180deg, #111 0%, #222 100%);
+  border-radius: 5px;
+  border: 1px solid #000;
+  box-shadow: inset 0 2px 4px rgba(0,0,0,0.8);
+  position: relative;
+}
+.slider-thumb {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  transform: translate(-50%, -50%);
+  width: 14px;
+  height: 18px;
+  background: linear-gradient(180deg, #e0e1e3 0%, #b8b9bb 60%, #888 100%);
+  border-radius: 2px;
+  border: 1px solid #666;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.5), 0 1px 0 rgba(255,255,255,0.4) inset;
+  transition: left 0.15s ease;
+  cursor: pointer;
+}
+.slider-labels {
+  display: flex;
+  width: 72px;
+  justify-content: space-between;
+}
+.slider-label {
+  font-family: var(--mono);
+  font-size: 8px;
+  color: var(--text-dim);
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  pointer-events: all;
+  user-select: none;
+  transition: color var(--tr);
+}
+.slider-label.active { color: var(--text-title); }
+
+/* ── Extras row (scene buttons) ────────────────────────────── */
+.extras-row {
+  display: flex;
+  flex: 1;
+  gap: 5px;
+}
+.btn-scene {
+  flex: 1;
+  height: 34px;
+  font-size: 10px;
+  letter-spacing: 0.02em;
+}
+.btn-scene.active {
+  background: linear-gradient(180deg, #74eaf0 0%, var(--cyan) 60%, #008a87 100%);
+  border-color: #007a77;
+  color: #003535;
+  text-shadow: none;
+  box-shadow: 0 0 10px rgba(0,206,201,0.5), 0 1px 0 rgba(255,255,255,0.3) inset;
+}
+
+/* ── STOP button ────────────────────────────────────────────── */
+.btn-stop {
+  min-width: 48px;
+  height: 34px;
+  background: linear-gradient(180deg, #ff6b6b 0%, var(--red) 60%, #a02020 100%);
+  border-color: #801010;
+  color: #fff;
+  font-size: 11px;
+  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  box-shadow: 0 0 0 transparent, 0 1px 0 rgba(255,255,255,0.25) inset;
+}
+.btn-stop:active {
+  background: linear-gradient(180deg, #ff8888 0%, var(--red) 80%, #801010 100%);
+  box-shadow: 0 0 12px rgba(214,48,49,0.7);
+}
+
+/* ── LED indicator dots ─────────────────────────────────────── */
+.btn-led {
+  display: block;
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: #333;
+  position: absolute;
+  top: 4px; right: 4px;
+  box-shadow: inset 0 1px 1px rgba(0,0,0,0.5);
+}
+.btn.active .btn-led,
+.btn-tone.active .btn-led {
+  background: var(--amber);
+  box-shadow: 0 0 4px var(--amber);
+}
+.btn-light.active .btn-led { background: var(--blue-hi); box-shadow: 0 0 4px var(--blue-hi); }
+.btn-scene.active .btn-led { background: var(--cyan);    box-shadow: 0 0 4px var(--cyan); }
+.btn-stop .btn-led          { background: var(--red-hi);  box-shadow: 0 0 4px var(--red-hi); }
+
+/* Screw corners for realism */
+.hud::after {
+  content: '';
+  position: absolute;
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #555, #222);
+  border: 1px solid #111;
+  bottom: 6px; right: 8px;
+  box-shadow: -532px 0 0 0 #222, -532px 0 0 1px #111;
+}
