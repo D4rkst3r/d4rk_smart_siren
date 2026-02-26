@@ -217,29 +217,39 @@ Citizen.CreateThread(function()
 
         if DoesEntityExist(veh) and allowed then
             if veh ~= currentVeh then
-                currentVeh   = veh
-                inVehicle    = true
-                isDriver     = (seat == -1)
-                activeVehCfg = getVehicleConfig(GetEntityModel(veh))
-                buildActiveTones(activeVehCfg)
+                currentVeh = veh
+                inVehicle  = true
+                isDriver   = (seat == -1)
 
                 if veh == lastExitedVeh then
+                    -- Gleiches Fzg: Config + Töne sind noch gültig, nicht neu bauen
                     -- Gleiches Fahrzeug wieder betreten → State wiederherstellen.
-                    -- vehicle.lua hat das Fzg inzwischen als "neu" erkannt und
-                    -- alle Flags zurückgesetzt. Wir müssen Sirene + Licht
-                    -- explizit neu anwenden damit GTA-Natives wieder stimmen.
-                    local tone = activeTones[state.sirenIndex]
-                    if tone then
-                        TriggerEvent('smartsiren:client:setSiren', tone.entry)
-                    end
-                    if state.lightsOn then
-                        TriggerEvent('smartsiren:client:setLights', true)
-                    end
-                    dbg('Wiedereingestiegen – State re-applied (sirenIndex='
-                        .. tostring(state.sirenIndex) .. ' lightsOn='
-                        .. tostring(state.lightsOn) .. ')')
+                    -- RACE CONDITION FIX: vehicle.lua läuft mit 500ms, main.lua
+                    -- mit 300ms. Wir spawnen einen eigenen Thread der 600ms wartet
+                    -- (> 500ms) damit vehicle.lua suppressReset gesetzt + seinen
+                    -- Tick fertig hat bevor wir setSiren/setLights triggern.
+                    local savedSirenIdx = state.sirenIndex
+                    local savedLightsOn = state.lightsOn
+                    local savedVeh      = veh
+                    Citizen.CreateThread(function()
+                        Citizen.Wait(600)
+                        -- Sicherstellen dass Spieler noch im selben Fzg sitzt
+                        if GetVehiclePedIsIn(PlayerPedId(), false) ~= savedVeh then return end
+                        local tone = activeTones[savedSirenIdx]
+                        if tone and tone.entry ~= 'off' then
+                            TriggerEvent('smartsiren:client:setSiren', tone.entry)
+                        end
+                        if savedLightsOn then
+                            TriggerEvent('smartsiren:client:setLights', true)
+                        end
+                        dbg('Wiedereinstieg – State re-applied nach 600ms (sirenIndex='
+                            .. tostring(savedSirenIdx) .. ' lightsOn='
+                            .. tostring(savedLightsOn) .. ')')
+                    end)
                 else
-                    -- Neues Fahrzeug → sauber starten
+                    -- Neues Fahrzeug → Config + Töne neu laden, State resetten
+                    activeVehCfg = getVehicleConfig(GetEntityModel(veh))
+                    buildActiveTones(activeVehCfg)
                     state = { sirenIndex = 1, lightsOn = false }
                     dbg('Eingestiegen (neu): ' .. GetDisplayNameFromVehicleModel(GetEntityModel(veh)))
                 end

@@ -16,20 +16,21 @@ function nuiPost(action, data) {
   }).catch(() => {});
 }
 
-function render(tones, activeIdx) {
+// Letzter Tone-Key zum Vergleich – DOM nur neu bauen wenn sich die Töne ändern
+let lastTonesKey = "";
+
+function buildButtons(tones) {
   toneRow.innerHTML = "";
   bottomRow.querySelectorAll(".btn-horn").forEach((el) => el.remove());
 
   tones.forEach((t, i) => {
     if (t.id === "off") return;
 
-    const isHorn = t.id === "manual";
-    const isActive = i + 1 === activeIdx;
     const btn = document.createElement("button");
-
-    if (isHorn) {
-      btn.className = "btn btn-horn" + (isActive ? " active" : "");
+    if (t.id === "manual") {
+      btn.className = "btn btn-horn";
       btn.textContent = t.label.toUpperCase();
+      btn.dataset.idx = i + 1;
       btn.addEventListener("mousedown", () => {
         btn.classList.add("pressed");
         nuiPost("hornPress");
@@ -52,19 +53,38 @@ function render(tones, activeIdx) {
         btn.classList.remove("pressed");
         nuiPost("hornRelease");
       });
-      // HORN vor STOP einfügen
       btnStop.before(btn);
     } else {
-      btn.className = "btn btn-tone" + (isActive ? " active" : "");
+      btn.className = "btn btn-tone";
+      btn.textContent = t.label.toUpperCase();
       btn.dataset.id = t.id;
       btn.dataset.idx = i + 1;
-      btn.textContent = t.label.toUpperCase();
       btn.addEventListener("click", () =>
         nuiPost("setSiren", { index: i + 1 }),
       );
       toneRow.appendChild(btn);
     }
   });
+}
+
+function render(tones, activeIdx) {
+  // DOM nur neu bauen wenn sich die Töne geändert haben (anderes Fahrzeug)
+  const tonesKey = tones.map((t) => t.id).join(",");
+  if (tonesKey !== lastTonesKey) {
+    lastTonesKey = tonesKey;
+    buildButtons(tones);
+  }
+
+  // Nur Klassen aktualisieren – kein DOM-Rebuild
+  toneRow.querySelectorAll(".btn-tone").forEach((btn) => {
+    btn.classList.toggle("active", Number(btn.dataset.idx) === activeIdx);
+  });
+  const hornBtn = bottomRow.querySelector(".btn-horn");
+  if (hornBtn)
+    hornBtn.classList.toggle(
+      "active",
+      Number(hornBtn.dataset.idx) === activeIdx,
+    );
 }
 
 btnLight.addEventListener("click", () => nuiPost("toggleLights"));

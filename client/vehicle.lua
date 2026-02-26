@@ -49,6 +49,7 @@ local activeSoundId    = nil
 local sirenIsOn        = false
 local lightsAreOn      = false
 local manualModeActive = false -- FIX BUG 4: Manuellen Modus verfolgen
+local suppressReset    = false -- verhindert Reset beim Wiedereinsteigen ins gleiche Fzg
 
 -- ── Utility ───────────────────────────────────────────────────
 local function getLocalVeh()
