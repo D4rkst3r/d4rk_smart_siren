@@ -3,7 +3,6 @@
 -- ============================================================
 
 Config              = {}
-Config.Language     = 'de'
 Config.AllowedSeats = 'both'
 Config.Debug        = false
 
@@ -25,8 +24,8 @@ Config.Sirens       = {
     [9]  = { Name = 'CustomE', String = 'RESIDENT_VEHICLES_SIREN_QUICK_02', Ref = 0 },
     [10] = { Name = 'CustomF', String = 'RESIDENT_VEHICLES_SIREN_QUICK_03', Ref = 0 },
     [11] = { Name = 'Powercall', String = 'VEHICLES_HORNS_AMBULANCE_WARNING', Ref = 0 },
-    [12] = { Name = 'Horn', String = 'VEHICLES_HORNS_FIRETRUCK_WARNING', Ref = 0 },         -- kein "Fire" davor
-    [13] = { Name = 'Yelp', String = 'RESIDENT_VEHICLES_SIREN_FIRETRUCK_WAIL_01', Ref = 0 }, -- kein "Fire" davor
+    [12] = { Name = 'Horn', String = 'VEHICLES_HORNS_FIRETRUCK_WARNING', Ref = 0 },           -- kein "Fire" davor
+    [13] = { Name = 'Yelp', String = 'RESIDENT_VEHICLES_SIREN_FIRETRUCK_WAIL_01', Ref = 0 },  -- kein "Fire" davor
     [14] = { Name = 'Wail', String = 'RESIDENT_VEHICLES_SIREN_FIRETRUCK_QUICK_01', Ref = 0 }, -- kein "Fire" davor
 }
 
