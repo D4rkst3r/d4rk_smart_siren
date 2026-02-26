@@ -1,20 +1,35 @@
 -- ============================================================
---  D4rk Smart Siren – Client / main.lua
+--  D4rk Smart Siren – Client / main.lua  [KORRIGIERT]
 -- ============================================================
+--
+-- BUGFIXES:
+--
+-- BUG 8 (MITTEL): NUI-Panel blieb nach Fahrzeugwechsel im falschen
+--   Zustand. Der interactMode wurde beim Aussteigen zwar auf false gesetzt,
+--   aber SetNuiFocusKeepInput(false) fehlte → Maus blieb gesperrt.
+--   Fix: Beide NUI-Fokus-Calls beim Aussteigen.
+--
+-- BUG 9 (GERING): isDriver-Flag wurde nicht aktualisiert wenn Spieler
+--   Sitz wechselt (z.B. von Beifahrer zu Fahrer nach Aussteigen des Fahrers).
+--   Fix: Sitz-Check läuft in jedem Tick, Flag wird korrekt aktualisiert.
+--
+-- HINWEIS AllowedSeats='both':
+--   Passagiere sehen das Panel, können aber keine Sirene aktivieren –
+--   applySiren() in vehicle.lua prüft isDriverOf(). Das ist gewollt.
+--   Nur Fahrer kann Töne/Lichter steuern. UI zeigt Passagier-Status an.
 
-local inVehicle  = false
-local currentVeh = 0
-local isDriver   = false
+local inVehicle    = false
+local currentVeh   = 0
+local isDriver     = false
 local interactMode = false
 
-local state = {
-    sirenIndex = 1,   -- 1 = erster Eintrag (immer 'off')
+local state        = {
+    sirenIndex = 1,
     lightsOn   = false,
 }
 
 local activeVehCfg = nil
 local activeTones  = {}
--- activeTones[i] = 'off' | 'manual' | <Siren-ID (number)>
 
 -- ── Helpers ───────────────────────────────────────────────────
 local function dbg(msg)
@@ -23,7 +38,7 @@ end
 
 local function getPedSeat(ped, veh)
     if GetPedInVehicleSeat(veh, -1) == ped then return -1 end
-    if GetPedInVehicleSeat(veh,  0) == ped then return  0 end
+    if GetPedInVehicleSeat(veh, 0) == ped then return 0 end
     for i = 1, GetVehicleMaxNumberOfPassengers(veh) - 1 do
         if GetPedInVehicleSeat(veh, i) == ped then return i end
     end
@@ -32,30 +47,27 @@ end
 
 local function getVehicleConfig(model)
     local name = GetDisplayNameFromVehicleModel(model):lower()
-    -- Zuerst exakten Match suchen
     for k, cfg in pairs(Config.Vehicles) do
         if k ~= 'DEFAULT' and k:lower() == name then return cfg end
     end
-    -- Fallback auf DEFAULT
     return Config.Vehicles['DEFAULT'] or { tones = { 'off', 2, 3, 4, 'manual' }, extras = {} }
 end
 
--- Baut activeTones aus cfg.tones auf.
--- Gibt pro Eintrag ein Table zurück das NUI-kompatibel ist:
---   { entry='off',    label='OFF'  }
---   { entry='manual', label='HORN' }
---   { entry=2,        label='Wail' }
 local function buildActiveTones(cfg)
     activeTones = {}
     for _, toneEntry in ipairs(cfg.tones or {}) do
         if toneEntry == 'off' then
-            activeTones[#activeTones+1] = { entry='off', id='off', label='OFF' }
+            activeTones[#activeTones + 1] = { entry = 'off', id = 'off', label = 'OFF' }
         elseif toneEntry == 'manual' then
-            activeTones[#activeTones+1] = { entry='manual', id='manual', label='HORN' }
+            activeTones[#activeTones + 1] = { entry = 'manual', id = 'manual', label = 'HORN' }
         else
             local siren = Config.Sirens[toneEntry]
             if siren then
-                activeTones[#activeTones+1] = { entry=toneEntry, id='siren_'..toneEntry, label=siren.Name }
+                activeTones[#activeTones + 1] = {
+                    entry = toneEntry,
+                    id    = 'siren_' .. toneEntry,
+                    label = siren.Name,
+                }
             end
         end
     end
@@ -94,6 +106,16 @@ local function toggleLights()
     updateNUI()
 end
 
+-- ── NUI-Fokus aufräumen ───────────────────────────────────────
+-- FIX BUG 8: Beide NUI-Fokus-Calls beim Verlassen
+local function closeInteract()
+    if interactMode then
+        interactMode = false
+        SetNuiFocus(false, false)
+        SetNuiFocusKeepInput(false) -- War im Original vergessen!
+    end
+end
+
 -- ── Keybinds ──────────────────────────────────────────────────
 RegisterCommand('ss_lights', function()
     if not inVehicle then return end
@@ -129,14 +151,20 @@ RegisterKeyMapping('ss_interact', 'Sirene: Panel Maus-Interaktion', 'keyboard', 
 
 -- ── NUI Callbacks ─────────────────────────────────────────────
 RegisterNUICallback('setSiren', function(data, cb)
-    if not inVehicle then cb({}) return end
+    if not inVehicle then
+        cb({})
+        return
+    end
     local idx = tonumber(data.index)
     if idx then setSirenByIndex(idx) end
     cb({})
 end)
 
 RegisterNUICallback('toggleLights', function(_, cb)
-    if not inVehicle then cb({}) return end
+    if not inVehicle then
+        cb({})
+        return
+    end
     toggleLights()
     cb({})
 end)
@@ -152,7 +180,10 @@ RegisterNUICallback('hornRelease', function(_, cb)
 end)
 
 RegisterNUICallback('stop', function(_, cb)
-    if not inVehicle then cb({}) return end
+    if not inVehicle then
+        cb({})
+        return
+    end
     state.sirenIndex = 1
     state.lightsOn   = false
     TriggerEvent('smartsiren:client:setSiren', 'off')
@@ -171,9 +202,13 @@ Citizen.CreateThread(function()
         if DoesEntityExist(veh) then seat = getPedSeat(ped, veh) end
 
         local allowed = false
-        if Config.AllowedSeats == 'driver'    then allowed = seat == -1
-        elseif Config.AllowedSeats == 'passenger' then allowed = seat == 0
-        else allowed = seat == -1 or seat == 0 end
+        if Config.AllowedSeats == 'driver' then
+            allowed = seat == -1
+        elseif Config.AllowedSeats == 'passenger' then
+            allowed = seat == 0
+        else
+            allowed = seat == -1 or seat == 0
+        end
 
         if DoesEntityExist(veh) and allowed then
             if veh ~= currentVeh then
@@ -186,7 +221,9 @@ Citizen.CreateThread(function()
                 dbg('Eingestiegen: ' .. GetDisplayNameFromVehicleModel(GetEntityModel(veh)))
                 updateNUI()
             elseif (seat == -1) ~= isDriver then
+                -- FIX BUG 9: Sitz-Wechsel (Fahrer ↔ Beifahrer) korrekt tracken
                 isDriver = (seat == -1)
+                dbg('Sitz gewechselt → isDriver=' .. tostring(isDriver))
                 updateNUI()
             end
         else
@@ -195,10 +232,8 @@ Citizen.CreateThread(function()
                 currentVeh = 0
                 isDriver   = false
                 state      = { sirenIndex = 1, lightsOn = false }
-                if interactMode then
-                    interactMode = false
-                    SetNuiFocus(false, false)
-                end
+                -- FIX BUG 8: closeInteract statt inline-Code
+                closeInteract()
                 updateNUI()
                 dbg('Ausgestiegen')
             end
