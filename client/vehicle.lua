@@ -212,14 +212,14 @@ AddEventHandler('smartsiren:client:horn', function(pressed)
             Citizen.CreateThread(function()
                 while hornActive do
                     local ped = PlayerPedId()
+                    local v   = getLocalVeh() -- einmal cachen, nicht 2x aufrufen
                     -- Loop stoppen wenn Spieler stirbt oder ausgestiegen ist
-                    if IsPedDeadOrDying(ped, true) or not DoesEntityExist(getLocalVeh()) then
+                    if IsPedDeadOrDying(ped, true) or not DoesEntityExist(v) then
                         hornActive = false
                         SendNUIMessage({ action = 'horn', active = false })
                         break
                     end
-                    local v = getLocalVeh()
-                    if DoesEntityExist(v) and not manualModeActive then
+                    if not manualModeActive then
                         SoundVehicleHornThisFrame(v)
                     end
                     Citizen.Wait(0)
@@ -319,6 +319,37 @@ Citizen.CreateThread(function()
     end
 end)
 
+
+-- ── Tod-Handler ───────────────────────────────────────────────
+-- Wenn Spieler stirbt: Sirene + Blaulicht stoppen.
+-- Das Fahrzeug existiert noch, muss also sauber zurückgesetzt werden.
+AddEventHandler('baseevents:onPlayerDied', function()
+    local veh = lastVehicle
+    if veh and DoesEntityExist(veh) then
+        stopSirenSound(veh)
+        lightsAreOn = false
+        applyNativeState(veh)
+
+        -- Extras zurücksetzen
+        local name    = GetDisplayNameFromVehicleModel(GetEntityModel(veh)):lower()
+        local vehCfg  = Config.Vehicles[name] or Config.Vehicles['DEFAULT'] or {}
+        local mapping = (vehCfg.extras or {}).off
+        if mapping then
+            for _, extra in ipairs(mapping.extrasOn or {}) do SetVehicleExtra(veh, extra, false) end
+            for _, extra in ipairs(mapping.extrasOff or {}) do SetVehicleExtra(veh, extra, true) end
+        end
+
+        -- Server informieren
+        local netId = NetworkGetNetworkIdFromEntity(veh)
+        TriggerServerEvent('smartsiren:server:syncSiren', netId, 'off')
+        TriggerServerEvent('smartsiren:server:syncLights', netId, false)
+    end
+    hornActive    = false
+    suppressReset = false
+    if Config.Debug then
+        print('^3[SmartSiren]^7 Spieler gestorben – Sirene/Licht gestoppt')
+    end
+end)
 -- ── Remote Sync ───────────────────────────────────────────────
 -- FIX BUG 3: isLocal=false → triggert KEINEN Server-Event
 AddEventHandler('smartsiren:client:applyRemoteLights', function(netId, on)

@@ -25,21 +25,19 @@ Config.Sirens       = {
     [9]  = { Name = 'CustomE', String = 'RESIDENT_VEHICLES_SIREN_QUICK_02', Ref = 0 },
     [10] = { Name = 'CustomF', String = 'RESIDENT_VEHICLES_SIREN_QUICK_03', Ref = 0 },
     [11] = { Name = 'Powercall', String = 'VEHICLES_HORNS_AMBULANCE_WARNING', Ref = 0 },
-    [12] = { Name = 'Horn', String = 'VEHICLES_HORNS_FIRETRUCK_WARNING', Ref = 0 },           -- kein "Fire" davor
-    [13] = { Name = 'Yelp', String = 'RESIDENT_VEHICLES_SIREN_FIRETRUCK_WAIL_01', Ref = 0 },  -- kein "Fire" davor
+    [12] = { Name = 'Horn', String = 'VEHICLES_HORNS_FIRETRUCK_WARNING', Ref = 0 },         -- kein "Fire" davor
+    [13] = { Name = 'Yelp', String = 'RESIDENT_VEHICLES_SIREN_FIRETRUCK_WAIL_01', Ref = 0 }, -- kein "Fire" davor
     [14] = { Name = 'Wail', String = 'RESIDENT_VEHICLES_SIREN_FIRETRUCK_QUICK_01', Ref = 0 }, -- kein "Fire" davor
 }
 
 Config.Vehicles     = {
 
     ['DEFAULT'] = {
-        label  = nil,
         tones  = { 'off', 2, 3, 4, 'manual' },
         extras = {},
     },
 
     ['police'] = {
-        label  = 'Polizei Streifenwagen',
         tones  = { 'off', 2, 3, 4, 'manual' },
         extras = {
             on  = { extrasOn = { 1, 2 }, extrasOff = { 3, 4 } },
@@ -48,7 +46,6 @@ Config.Vehicles     = {
     },
 
     ['firetruk'] = {
-        label  = 'Feuerwehr LF',
         tones  = { 'off', 12, 13, 14, 'manual' },
         extras = {
             on  = { extrasOn = { 1, 2, 3 }, extrasOff = { 4 } },
@@ -57,7 +54,6 @@ Config.Vehicles     = {
     },
 
     ['ambulance'] = {
-        label  = 'RTW',
         tones  = { 'off', 2, 3, 11, 'manual' },
         extras = {
             on  = { extrasOn = { 1, 2 }, extrasOff = {} },
@@ -66,7 +62,6 @@ Config.Vehicles     = {
     },
 
     ['polmav'] = {
-        label  = 'Polizei Heli',
         tones  = { 'off', 2, 'manual' },
         extras = {},
     },

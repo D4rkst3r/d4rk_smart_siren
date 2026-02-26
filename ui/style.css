@@ -57,7 +57,6 @@ html, body {
 }
 .hud.hidden  { opacity:0; transform:translateY(6px); pointer-events:none; }
 .hud.visible { opacity:1; transform:translateY(0);   pointer-events:all;  }
-.hud.panel-hidden { opacity:0 !important; pointer-events:none !important; }
 
 /* ══ TITLE ══════════════════════════════════════════════════ */
 .title-bar {
