@@ -10,11 +10,16 @@
 <body>
   <div id="hud" class="hud hidden">
     <div class="title-bar">
-      <span class="title-text">vSMART SIREN CONTROL</span>
+      <span class="title-text">SMART SIREN CONTROL</span>
+    </div>
+    <div class="status-bar" id="statusBar">
+      <span class="status-item" id="statusTone"><span class="status-dot dot-off"></span>OFF</span>
+      <span class="status-sep">|</span>
+      <span class="status-item" id="statusLights"><span class="status-dot dot-off"></span>BLK AUS</span>
     </div>
     <div class="tone-grid" id="toneRow"></div>
     <div class="bottom-row" id="bottomRow">
-      <button class="btn btn-lights" id="btnLight">LIGHTS</button>
+      <button class="btn btn-lights" id="btnLight"><span class="led" id="ledLights"></span>LIGHTS</button>
       <!-- HORN wird hier per JS eingefügt -->
       <button class="btn btn-stop" id="btnStop">STOP</button>
     </div>

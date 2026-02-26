@@ -87,6 +87,36 @@ function render(tones, activeIdx) {
     );
 }
 
+function updateStatus(tones, activeIdx, lightsOn) {
+  // Tone-Status
+  const tone = tones[activeIdx - 1];
+  const isOff = !tone || tone.id === "off";
+  const isManual = tone && tone.id === "manual";
+  const dot = statusTone.querySelector(".status-dot");
+
+  if (isOff) {
+    statusTone.classList.remove("active");
+    dot.className = "status-dot dot-off";
+    statusTone.childNodes[1]
+      ? (statusTone.childNodes[1].textContent = "OFF")
+      : null;
+    // set text node
+    statusTone.innerHTML = '<span class="status-dot dot-off"></span>OFF';
+  } else {
+    statusTone.classList.add("active");
+    statusTone.innerHTML = `<span class="status-dot dot-siren"></span>${(tone.label || "").toUpperCase()}`;
+  }
+
+  // Lights-Status
+  if (lightsOn) {
+    statusLights.classList.add("active");
+    statusLights.innerHTML = '<span class="status-dot dot-on"></span>BLK AN';
+  } else {
+    statusLights.classList.remove("active");
+    statusLights.innerHTML = '<span class="status-dot dot-off"></span>BLK AUS';
+  }
+}
+
 btnLight.addEventListener("click", () => nuiPost("toggleLights"));
 btnStop.addEventListener("click", () => nuiPost("stop"));
 
@@ -101,6 +131,7 @@ function applyState(data) {
 
   render(state.sirenTones, state.sirenIndex);
   btnLight.classList.toggle("active", state.lightsOn);
+  updateStatus(state.sirenTones, state.sirenIndex, state.lightsOn);
 }
 
 window.addEventListener("message", (e) => {
