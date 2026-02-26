@@ -1,248 +1,254 @@
-@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Barlow+Condensed:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=Share+Tech+Mono&display=swap');
 
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
 :root {
-  --chassis:       #2a2d32;
-  --chassis-hi:    #35383e;
-  --chassis-lo:    #1e2024;
-  --chassis-rim:   #3d4148;
-  --btn-face:      #c8c9cb;
-  --btn-face-hi:   #dddee0;
-  --btn-face-sh:   #9a9b9d;
-  --btn-top:       #e8e9eb;
-  --btn-shadow:    #707274;
-  --red:           #d63031;
-  --red-hi:        #ff4d4d;
-  --amber:         #e17055;
-  --green:         #00b894;
-  --blue:          #0984e3;
-  --blue-hi:       #74b9ff;
-  --cyan:          #00cec9;
-  --text-btn:      #1a1b1d;
-  --text-dim:      #8a8c8f;
-  --text-title:    #e8e9eb;
-  --font:   'Barlow Condensed', sans-serif;
-  --mono:   'Share Tech Mono', monospace;
-  --tr: 0.08s ease;
+  --green:      #00ff66;
+  --green-glow: rgba(0,255,102,0.55);
+  --green-text: rgba(0,255,102,0.9);
+  --red:        #ff2233;
+  --red-glow:   rgba(255,34,51,0.6);
+  --font: 'Barlow Condensed', sans-serif;
+  --mono: 'Share Tech Mono', monospace;
 }
 
 html, body {
   width: 100vw; height: 100vh;
   background: transparent;
   overflow: hidden;
-  font-family: var(--font);
   pointer-events: none;
 }
 
-/* ── Panel position ────────────────────────────────────────────── */
+/* ══ PANEL ══════════════════════════════════════════════════ */
 .hud {
   position: fixed;
-  bottom: 22px;
-  left: 50%;
-  transform: translateX(-50%);
+  bottom: 18.5vh;
+  left: 0.4vw;
   pointer-events: none;
-  background: linear-gradient(160deg, var(--chassis-hi) 0%, var(--chassis) 40%, var(--chassis-lo) 100%);
-  border: 2px solid var(--chassis-rim);
-  border-radius: 6px;
-  padding: 8px 10px 9px;
-  width: 560px;
-  box-shadow:
-    0 2px 0 rgba(255,255,255,0.06) inset,
-    0 -1px 0 rgba(0,0,0,0.5) inset,
-    0 8px 32px rgba(0,0,0,0.7),
-    0 2px 6px rgba(0,0,0,0.5);
+
+  width: 20vw;
+  min-width: 280px;
+  max-width: 520px;
+
+  background:
+    repeating-linear-gradient(
+      0deg,
+      rgba(255,255,255,0.012) 0px,
+      transparent 1px,
+      transparent 3px
+    ),
+    radial-gradient(ellipse at 60% 30%, rgba(30,40,50,0.8) 0%, rgba(8,10,12,0.95) 100%);
+  background-color: #0c0e10;
+
+  border-radius: 0.6vw;
+  border: 1px solid rgba(255,255,255,0.08);
+  padding: 2vh 1.2vw 2.4vh;
+
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  transition: opacity 0.2s, transform 0.2s;
-}
-.hud.hidden  { opacity: 0; transform: translateX(-50%) translateY(12px); pointer-events: none; }
-.hud.visible { opacity: 1; transform: translateX(-50%) translateY(0); }
+  gap: 1.1vh;
 
-/* FIX BUG 12: .panel-hidden via Klasse statt inline-style */
-/* So wird die CSS-Transition korrekt ausgeführt und kein JS-State-Konflikt */
-.hud.panel-hidden {
-  opacity: 0 !important;
-  pointer-events: none !important;
+  box-shadow:
+    0 0 0 1px rgba(0,0,0,0.8),
+    0 1vh 4vh rgba(0,0,0,0.9),
+    inset 0 1px 0 rgba(255,255,255,0.06);
+
+  transition: opacity 0.15s ease, transform 0.15s ease;
+}
+.hud.hidden  { opacity:0; transform:translateY(6px); pointer-events:none; }
+.hud.visible { opacity:1; transform:translateY(0);   pointer-events:all;  }
+.hud.panel-hidden { opacity:0 !important; pointer-events:none !important; }
+
+/* ══ TITLE ══════════════════════════════════════════════════ */
+.title-bar {
+  padding: 0.8vh 1vw;
+  margin: 0 3vw;
+  border: 2px solid var(--red);
+  border-radius: 0.4vw;
+  background: rgba(0,0,0,0.3);
+  text-align: center;
+  box-shadow:
+    0 0 0.6vw var(--red-glow),
+    0 0 1.2vw rgba(255,34,51,0.25),
+    inset 0 0 0.6vw rgba(255,34,51,0.06);
+}
+.title-text {
+  font-family: var(--mono);
+  font-size: clamp(9px, 0.75vw, 15px);
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  color: #fff;
+  text-shadow:
+    0 0 0.5vw rgba(255,255,255,0.6),
+    0 0 1vw rgba(255,255,255,0.2);
 }
 
-.hud::before {
-  content: '';
-  position: absolute;
-  top: 5px; left: 12px; right: 12px;
-  height: 1px;
-  background: rgba(0,0,0,0.35);
-  border-bottom: 1px solid rgba(255,255,255,0.04);
-}
-
-/* ── Rows ──────────────────────────────────────────────────────── */
-.row {
+/* ══ ROWS ════════════════════════════════════════════════════ */
+.tone-grid {
   display: flex;
-  align-items: center;
-  gap: 5px;
+  gap: 0.4vw;
+  justify-content: center;
+}
+.bottom-row {
+  display: flex;
+  gap: 0.4vw;
+  justify-content: center;
 }
 
-/* ── Button Base ───────────────────────────────────────────────── */
+/* ══ BUTTON – physischer Look ════════════════════════════════
+   Ebenen von unten nach oben:
+   1. Äußerer Rand (border): grüner Neon-Rand
+   2. Körper: dunkler Verlauf von oben (hell) nach unten (dunkel)
+      → simuliert Lichteinfall von oben
+   3. Innen-Highlight oben: weißer 1px Streifen → Kante die Licht fängt
+   4. Innen-Schatten unten: dunkler Streifen → Tiefe nach unten
+   5. Glow außen: grüner Neon-Schimmer
+   Beim Drücken:
+   - Verlauf invertiert (jetzt dunkel oben, hell unten)
+   - Innen-Schatten oben → Button wirkt eingedrückt
+   - kein translateY nötig, Schatten allein reicht
+════════════════════════════════════════════════════════════ */
 .btn {
-  background: linear-gradient(180deg, var(--btn-top) 0%, var(--btn-face) 55%, var(--btn-face-sh) 100%);
-  border: 1px solid #888;
-  border-bottom: 2px solid var(--btn-shadow);
-  border-radius: 3px;
-  color: var(--text-btn);
+  /* Körper: hell oben, dunkel unten → Licht von oben */
+  background: linear-gradient(
+    180deg,
+    rgba(60,70,60,0.6)  0%,
+    rgba(10,14,10,0.85) 60%,
+    rgba(0,0,0,0.95)    100%
+  );
+
+  border: 2px solid var(--green);
+  border-radius: 0.3vw;
+  color: var(--green-text);
+
   font-family: var(--font);
-  font-size: 10.5px;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  padding: 0;
-  height: 34px;
-  min-width: 44px;
+  font-size: clamp(9px, 0.72vw, 14px);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+
+  height: clamp(30px, 3.9vh, 48px);
+  min-width: 2vw;
   cursor: pointer;
   user-select: none;
   pointer-events: all;
-  transition: all var(--tr);
+
+  box-shadow:
+    /* Neon-Außen-Glow */
+    0 0 0.5vw var(--green-glow),
+    0 0 1vw rgba(0,255,102,0.2),
+    /* Physische Tiefe: unterer Rand dunkler → Button steht hervor */
+    0 3px 0 rgba(0,0,0,0.8),
+    0 4px 6px rgba(0,0,0,0.6),
+    /* Innen-Highlight oben */
+    inset 0 1px 0 rgba(255,255,255,0.12),
+    /* Innen-Schatten unten */
+    inset 0 -2px 4px rgba(0,0,0,0.6),
+    /* Neon-Innen-Schimmer */
+    inset 0 0 0.4vw rgba(0,255,102,0.06);
+
+  text-shadow:
+    0 0 0.5vw var(--green-glow),
+    0 0 0.9vw rgba(0,255,102,0.4);
+
+  transition: box-shadow 0.06s, background 0.06s, transform 0.05s;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  /* Verhindert dass Text durch Schatten-Offset verrutscht */
   position: relative;
-  text-shadow: 0 1px 0 rgba(255,255,255,0.5);
+  top: 0;
+}
+
+/* Gedrückt: Button sinkt ein */
+.btn:active,
+.btn.pressed {
+  background: linear-gradient(
+    180deg,
+    rgba(0,0,0,0.95)    0%,
+    rgba(10,14,10,0.85) 40%,
+    rgba(40,55,40,0.5)  100%
+  );
   box-shadow:
-    0 1px 0 rgba(255,255,255,0.6) inset,
-    0 -1px 0 rgba(0,0,0,0.15) inset;
-}
-.btn:active, .btn.pressed {
-  background: linear-gradient(180deg, var(--btn-face-sh) 0%, var(--btn-face) 100%);
-  border-bottom-width: 1px;
-  transform: translateY(1px);
-  box-shadow:
-    0 1px 0 rgba(0,0,0,0.2) inset,
-    0 0 0 transparent;
+    0 0 0.4vw var(--green-glow),
+    /* Kein unterer Schatten → Button liegt jetzt flach/eingedrückt */
+    0 1px 0 rgba(0,0,0,0.8),
+    /* Innen-Schatten oben → simuliert eingedrückten Zustand */
+    inset 0 2px 6px rgba(0,0,0,0.9),
+    inset 0 1px 3px rgba(0,0,0,0.7),
+    inset 0 0 0.4vw rgba(0,255,102,0.08);
+  transform: translateY(2px);
 }
 
-/* ── Utility buttons ─────────────────────────────────────────── */
-.btn-util {
-  min-width: 44px;
-  background: linear-gradient(180deg, #bbbcbe 0%, #a8a9ab 60%, #8a8b8d 100%);
-  color: #222;
-}
-/* FIX BUG 11: Aktiver Zustand für LAMP/MODE/HIDE */
-.btn-util.active {
-  background: linear-gradient(180deg, #ffe08a 0%, #f0a500 60%, #c07800 100%);
-  border-color: #a06000;
-  color: #3a1a00;
-  box-shadow: 0 0 8px rgba(240,165,0,0.4), 0 1px 0 rgba(255,255,255,0.4) inset;
-}
-
-/* ── Panel Title Center ─────────────────────────────────────── */
-.panel-title-wrap {
-  flex: 1;
-  text-align: center;
-  padding: 2px 6px;
-  background: linear-gradient(180deg, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.12) 100%);
-  border: 1px solid rgba(0,0,0,0.4);
-  border-radius: 3px;
-  box-shadow: inset 0 1px 3px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.06);
-}
-.panel-title {
-  font-family: var(--mono);
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  color: var(--text-title);
-  text-shadow: 0 0 10px rgba(255,255,255,0.15), 0 1px 2px rgba(0,0,0,0.8);
-  line-height: 1.2;
-}
-.panel-sub {
-  font-size: 9px;
-  letter-spacing: 0.12em;
-  color: var(--text-dim);
-  font-family: var(--mono);
-  line-height: 1;
-}
-
-/* ── LIGHT button ────────────────────────────────────────────── */
-.btn-light {
-  background: linear-gradient(180deg, #4a9ee8 0%, var(--blue) 60%, #0666b0 100%);
-  border-color: #0555a0;
-  color: #fff;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-}
-.btn-light.active {
-  background: linear-gradient(180deg, #74b9ff 0%, #0984e3 60%, #0555a0 100%);
-  box-shadow: 0 0 10px rgba(9,132,227,0.6), 0 1px 0 rgba(255,255,255,0.3) inset;
-  border-color: var(--blue-hi);
-}
-
-/* ── Tone buttons ───────────────────────────────────────────── */
+/* ── Tone Buttons ─────────────────────────────────────────── */
 .btn-tone {
-  flex: 1;
-  height: 36px;
-  font-size: 10px;
-  letter-spacing: 0.03em;
+  padding: 0 0.4vw;
+  width: clamp(50px, 3.8vw, 78px);
 }
+
+/* Aktiver Ton: rot wie HORN */
 .btn-tone.active {
-  background: linear-gradient(180deg, #ffe08a 0%, #f0a500 60%, #c07800 100%);
-  border-color: #a06000;
-  color: #3a1a00;
+  border-color: var(--red);
+  color: #ff4455;
+  background: linear-gradient(
+    180deg,
+    rgba(40,0,5,0.8)   0%,
+    rgba(20,0,3,0.95)  100%
+  );
   box-shadow:
-    0 0 8px rgba(240,165,0,0.5),
-    0 1px 0 rgba(255,255,255,0.4) inset;
-  text-shadow: 0 1px 0 rgba(255,255,0,0.3);
-}
-.btn-tone[data-id="horn"],
-.btn-tone[data-id="manual"] {
-  background: linear-gradient(180deg, #f0b46a 0%, var(--amber) 60%, #b05030 100%);
-  border-color: #904020;
-  color: #fff;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.4);
-}
-.btn-tone[data-id="horn"].active,
-.btn-tone[data-id="manual"].active,
-.btn-tone[data-id="horn"].pressed,
-.btn-tone[data-id="manual"].pressed {
-  background: linear-gradient(180deg, #ffcc88 0%, var(--amber) 60%, #904020 100%);
-  box-shadow: 0 0 10px rgba(225,112,85,0.6), 0 1px 0 rgba(255,255,255,0.3) inset;
+    0 0 0.7vw var(--red-glow),
+    0 0 1.4vw rgba(255,34,51,0.35),
+    0 0 2.5vw rgba(255,34,51,0.12),
+    0 1px 0 rgba(0,0,0,0.8),
+    inset 0 2px 5px rgba(0,0,0,0.8),
+    inset 0 0 0.5vw rgba(255,34,51,0.15);
+  text-shadow:
+    0 0 0.6vw var(--red),
+    0 0 1.2vw rgba(255,34,51,0.6);
+  transform: translateY(1px);
 }
 
-/* ── STOP button ─────────────────────────────────────────────── */
-.btn-stop {
-  min-width: 48px;
-  height: 34px;
-  background: linear-gradient(180deg, #ff6b6b 0%, var(--red) 60%, #a02020 100%);
-  border-color: #801010;
-  color: #fff;
-  font-size: 11px;
-  text-shadow: 0 1px 2px rgba(0,0,0,0.5);
-  box-shadow: 0 0 0 transparent, 0 1px 0 rgba(255,255,255,0.25) inset;
+/* ── LIGHTS ───────────────────────────────────────────────── */
+.btn-lights {
+  width: clamp(70px, 5vw, 105px);
 }
-.btn-stop:active {
-  background: linear-gradient(180deg, #ff8888 0%, var(--red) 80%, #801010 100%);
-  box-shadow: 0 0 12px rgba(214,48,49,0.7);
+.btn-lights.active {
+  border-color: var(--red);
+  color: #ff4455;
+  background: linear-gradient(
+    180deg,
+    rgba(40,0,5,0.8)   0%,
+    rgba(20,0,3,0.95)  100%
+  );
+  text-shadow:
+    0 0 0.5vw var(--red-glow),
+    0 0 1vw rgba(255,34,51,0.4);
+  box-shadow:
+    0 0 0.6vw var(--red-glow),
+    0 0 1.2vw rgba(255,34,51,0.3),
+    0 1px 0 rgba(0,0,0,0.8),
+    inset 0 2px 5px rgba(0,0,0,0.8),
+    inset 0 0 0.5vw rgba(255,34,51,0.1);
+  transform: translateY(1px);
 }
 
-/* ── LED indicator dots ─────────────────────────────────────── */
-.btn-led {
-  display: block;
-  width: 5px; height: 5px;
-  border-radius: 50%;
-  background: #333;
-  position: absolute;
-  top: 4px; right: 4px;
-  box-shadow: inset 0 1px 1px rgba(0,0,0,0.5);
+/* ── HORN ─────────────────────────────────────────────────── */
+.btn-horn {
+  width: clamp(70px, 5vw, 105px);
 }
-.btn.active .btn-led,
-.btn-tone.active .btn-led {
-  background: var(--amber);
-  box-shadow: 0 0 4px var(--amber);
-}
-.btn-light.active .btn-led { background: var(--blue-hi); box-shadow: 0 0 4px var(--blue-hi); }
-.btn-stop .btn-led          { background: var(--red-hi);  box-shadow: 0 0 4px var(--red-hi); }
-
-/* Screw corners */
-.hud::after {
-  content: '';
-  position: absolute;
-  width: 5px; height: 5px;
-  border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, #555, #222);
-  border: 1px solid #111;
-  bottom: 6px; right: 8px;
-  box-shadow: -532px 0 0 0 #222, -532px 0 0 1px #111;
+.btn-horn.pressed {
+  background: linear-gradient(
+    180deg,
+    rgba(0,0,0,0.95)    0%,
+    rgba(0,30,12,0.85)  100%
+  );
+  box-shadow:
+    0 0 0.8vw var(--green-glow),
+    0 0 1.6vw rgba(0,255,102,0.4),
+    0 1px 0 rgba(0,0,0,0.8),
+    inset 0 2px 6px rgba(0,0,0,0.9),
+    inset 0 0 0.6vw rgba(0,255,102,0.12);
+  transform: translateY(2px);
 }

@@ -3,11 +3,10 @@
 -- ============================================================
 
 Config              = {}
-Config.Language     = 'de'   -- 'de' | 'en'
-Config.AllowedSeats = 'both' -- 'driver' | 'passenger' | 'both'
-Config.Debug        = true
+Config.Language     = 'de'
+Config.AllowedSeats = 'both'
+Config.Debug        = false
 
--- ── Tastenbelegung ────────────────────────────────────────────
 Config.Keys         = {
     LightsNext = 'q',
     Horn       = 'e',
@@ -15,10 +14,6 @@ Config.Keys         = {
     Tones      = { [1] = '1', [2] = '2', [3] = '3', [4] = '4', [5] = '5', [6] = '6', [7] = '7', [8] = '8', [9] = '9' },
 }
 
--- ── Sirenen-Bibliothek ────────────────────────────────────────
--- Identisch zu LVC SIRENS.lua – ID-basiert, direkt mit PlaySoundFromEntity nutzbar.
--- Ref = 0 für vanilla GTA Sounds.
--- Für Custom AWC (z.B. WMServerSirens): Ref = 'DLC_WMSIRENS_SOUNDSET'
 Config.Sirens       = {
     [1]  = { Name = 'Airhorn', String = 'SIRENS_AIRHORN', Ref = 0 },
     [2]  = { Name = 'Wail', String = 'VEHICLES_HORNS_SIREN_1', Ref = 0 },
@@ -31,14 +26,11 @@ Config.Sirens       = {
     [9]  = { Name = 'CustomE', String = 'RESIDENT_VEHICLES_SIREN_QUICK_02', Ref = 0 },
     [10] = { Name = 'CustomF', String = 'RESIDENT_VEHICLES_SIREN_QUICK_03', Ref = 0 },
     [11] = { Name = 'Powercall', String = 'VEHICLES_HORNS_AMBULANCE_WARNING', Ref = 0 },
-    [12] = { Name = 'Fire Horn', String = 'VEHICLES_HORNS_FIRETRUCK_WARNING', Ref = 0 },
-    [13] = { Name = 'Fire Yelp', String = 'RESIDENT_VEHICLES_SIREN_FIRETRUCK_WAIL_01', Ref = 0 },
-    [14] = { Name = 'Fire Wail', String = 'RESIDENT_VEHICLES_SIREN_FIRETRUCK_QUICK_01', Ref = 0 },
+    [12] = { Name = 'Horn', String = 'VEHICLES_HORNS_FIRETRUCK_WARNING', Ref = 0 },         -- kein "Fire" davor
+    [13] = { Name = 'Yelp', String = 'RESIDENT_VEHICLES_SIREN_FIRETRUCK_WAIL_01', Ref = 0 }, -- kein "Fire" davor
+    [14] = { Name = 'Wail', String = 'RESIDENT_VEHICLES_SIREN_FIRETRUCK_QUICK_01', Ref = 0 }, -- kein "Fire" davor
 }
 
--- ── Fahrzeug-Configs ──────────────────────────────────────────
--- tones  = Liste von Siren-IDs aus Config.Sirens (0 = Tröte, 'off' = AUS)
--- extras = GTA-Extras beim Blaulicht AN (on) und AUS (off)
 Config.Vehicles     = {
 
     ['DEFAULT'] = {
@@ -79,19 +71,8 @@ Config.Vehicles     = {
         tones  = { 'off', 2, 'manual' },
         extras = {},
     },
-
-    -- Weiteres Fahrzeug:
-    -- ['modelname'] = {
-    --     label  = 'Anzeigename',
-    --     tones  = { 'off', 2, 3, 'manual' },   -- IDs aus Config.Sirens
-    --     extras = {
-    --         on  = { extrasOn={1}, extrasOff={2} },
-    --         off = { extrasOn={},  extrasOff={1} },
-    --     },
-    -- },
 }
 
--- ── Übersetzungen ─────────────────────────────────────────────
 Config.Translations = {
     de = { driver = 'Fahrer', passenger = 'Beifahrer' },
     en = { driver = 'Driver', passenger = 'Passenger' },
