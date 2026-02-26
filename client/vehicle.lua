@@ -182,8 +182,8 @@ local function applyBlaulicht(veh, on, isLocal)
     if not DoesEntityExist(veh) then return end
 
     lightsAreOn = on
-    -- GTA Fahrzeuglichter (Standlicht/Abblendlicht)
-    SetVehicleLights(veh, on and 2 or 0)
+    -- SetVehicleLights bewusst NICHT aufrufen:
+    -- Blaulicht (Notlichter/Extras) ist unabhängig vom normalen Fahrlicht.
 
     -- Blinker + Mute-State neu schreiben (Sirene BLEIBT wie sie ist)
     applyNativeState(veh)
@@ -205,6 +205,8 @@ local function applyBlaulicht(veh, on, isLocal)
 end
 
 -- ── Horn ──────────────────────────────────────────────────────
+-- SoundVehicleHornThisFrame → spielt die Hupe genau für diesen Frame.
+-- Jeden Frame aufgerufen = nahtloser Dauerton ohne Duration-Probleme.
 AddEventHandler('smartsiren:client:horn', function(pressed)
     local veh = getLocalVeh()
     if not DoesEntityExist(veh) then return end
@@ -213,23 +215,21 @@ AddEventHandler('smartsiren:client:horn', function(pressed)
         hornActive = true
         SendNUIMessage({ action = 'horn', active = true })
 
-        -- FIX BUG 4: Im Manual-Modus übernimmt UseSirenAsHorn den Ton selbst.
-        -- StartVehicleHorn NUR wenn NICHT im Manual-Modus, da sonst
-        -- zwei konkurrierende Sound-Events entstehen (Hakeln/Überlagerung).
         if not manualModeActive then
             Citizen.CreateThread(function()
                 while hornActive do
                     local v = getLocalVeh()
                     if DoesEntityExist(v) and not manualModeActive then
-                        StartVehicleHorn(v, 250, GetHashKey('HELDDOWN'), false)
+                        SoundVehicleHornThisFrame(v)
                     end
-                    Citizen.Wait(200)
+                    Citizen.Wait(0)
                 end
             end)
         end
     elseif not pressed and hornActive then
         hornActive = false
         SendNUIMessage({ action = 'horn', active = false })
+        -- Loop verlässt sich selbst – kein Stop-Call nötig
     end
 end)
 

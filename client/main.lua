@@ -91,6 +91,13 @@ end
 local function setSirenByIndex(idx)
     if #activeTones == 0 then return end
     idx = math.max(1, math.min(idx, #activeTones))
+
+    -- Toggle: denselben Ton nochmal drücken → zurück auf OFF (Index 1)
+    -- Index 1 ist immer 'off' (buildActiveTones garantiert das)
+    if state.sirenIndex == idx and idx ~= 1 then
+        idx = 1
+    end
+
     state.sirenIndex = idx
     local tone = activeTones[idx]
     TriggerEvent('smartsiren:client:setSiren', tone.entry)
