@@ -1,6 +1,17 @@
 -- ============================================================
---  D4rk Smart Siren – Client / main.lua 
+--  D4rk Smart Siren – Client / main.lua  [KORRIGIERT]
 -- ============================================================
+--
+-- BUGFIXES:
+--
+-- BUG 9 (GERING): isDriver-Flag wurde nicht aktualisiert wenn Spieler
+--   Sitz wechselt (z.B. von Beifahrer zu Fahrer nach Aussteigen des Fahrers).
+--   Fix: Sitz-Check läuft in jedem Tick, Flag wird korrekt aktualisiert.
+--
+-- HINWEIS AllowedSeats='both':
+--   Passagiere sehen das Panel, können aber keine Sirene aktivieren –
+--   applySiren() in vehicle.lua prüft isDriverOf(). Das ist gewollt.
+--   Nur Fahrer kann Töne/Lichter steuern. UI zeigt Passagier-Status an.
 
 local inVehicle     = false
 local currentVeh    = 0
@@ -58,13 +69,17 @@ end
 
 -- ── NUI Update ────────────────────────────────────────────────
 local function updateNUI()
+    local vehLabel = ''
+    if inVehicle and DoesEntityExist(currentVeh) then
+        vehLabel = GetDisplayNameFromVehicleModel(GetEntityModel(currentVeh)):upper()
+    end
     SendNUIMessage({
-        action     = 'update',
-        visible    = inVehicle,
-        sirenIndex = state.sirenIndex,
-        lightsOn   = state.lightsOn,
-        sirenTones = activeTones,
-        -- isDriver/vehicleLabel/lang werden nicht mehr von der UI genutzt
+        action       = 'update',
+        visible      = inVehicle,
+        sirenIndex   = state.sirenIndex,
+        lightsOn     = state.lightsOn,
+        sirenTones   = activeTones,
+        vehicleLabel = vehLabel,
     })
 end
 
@@ -110,6 +125,13 @@ for i = 1, 9 do
     RegisterKeyMapping('ss_tone_' .. slot, 'Sirene: Ton ' .. slot, 'keyboard', Config.Keys.Tones[slot] or '')
 end
 
+RegisterCommand('+ss_qsiren', function()
+    if not inVehicle then return end
+    TriggerEvent('smartsiren:client:qsiren')
+end, false)
+RegisterCommand('-ss_qsiren', function() end, false)
+RegisterKeyMapping('+ss_qsiren', 'Sirene: Q-Siren (Kurzstoß)', 'keyboard', Config.Keys.QSiren or 'r')
+
 RegisterCommand('+ss_horn', function()
     if not inVehicle or not isDriver then return end
     TriggerEvent('smartsiren:client:horn', true)
@@ -136,6 +158,11 @@ RegisterNUICallback('toggleLights', function(_, cb)
         return
     end
     toggleLights()
+    cb({})
+end)
+
+RegisterNUICallback('qsirenPress', function(_, cb)
+    TriggerEvent('smartsiren:client:qsiren')
     cb({})
 end)
 
@@ -187,6 +214,12 @@ Citizen.CreateThread(function()
                 isDriver   = (seat == -1)
 
                 if veh == lastExitedVeh then
+                    -- Gleiches Fzg: Config + Töne sind noch gültig, nicht neu bauen
+                    -- Gleiches Fahrzeug wieder betreten → State wiederherstellen.
+                    -- RACE CONDITION FIX: vehicle.lua läuft mit 500ms, main.lua
+                    -- mit 300ms. Wir spawnen einen eigenen Thread der 600ms wartet
+                    -- (> 500ms) damit vehicle.lua suppressReset gesetzt + seinen
+                    -- Tick fertig hat bevor wir setSiren/setLights triggern.
                     local savedSirenIdx = state.sirenIndex
                     local savedLightsOn = state.lightsOn
                     local savedVeh      = veh
