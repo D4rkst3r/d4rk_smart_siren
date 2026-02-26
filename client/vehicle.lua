@@ -197,6 +197,8 @@ local function applyBlaulicht(veh, on, isLocal)
 end
 
 -- ── Horn ──────────────────────────────────────────────────────
+-- SoundVehicleHornThisFrame → spielt die Hupe genau für diesen Frame.
+-- Jeden Frame aufgerufen = nahtloser Dauerton ohne Duration-Probleme.
 AddEventHandler('smartsiren:client:horn', function(pressed)
     local veh = getLocalVeh()
     if not DoesEntityExist(veh) then return end
@@ -235,22 +237,26 @@ AddEventHandler('smartsiren:client:setLights', function(on)
     if DoesEntityExist(veh) then applyBlaulicht(veh, on, true) end
 end)
 
-AddEventHandler('smartsiren:client:vehicleLeft', function()
-    local lv         = lastVehicle
-    -- Flags zurücksetzen BEVOR applyNativeState, damit alles auf OFF geht
-    lightsAreOn      = false
-    sirenIsOn        = false
-    manualModeActive = false
-    -- Custom Sound stoppen und Fahrzeug sauber zurücksetzen
-    if lv and DoesEntityExist(lv) then
-        if activeSoundId ~= nil then
-            StopSound(activeSoundId)
-            ReleaseSoundId(activeSoundId)
-            activeSoundId = nil
-        end
-        UseSirenAsHorn(lv, false)
-        SetVehicleLights(lv, 0)
-        applyNativeState(lv) -- setzt Siren=false, Mute=false
+AddEventHandler('smartsiren:client:vehicleLeft', function(lv)
+    -- FIX BUG A: lv kommt als Parameter (lastVehicle ist hier bereits nil!)
+    --
+    -- DESIGN: Sirene + Blaulicht laufen WEITER wenn Spieler aussteigt.
+    -- suppressReset verhindert dass der Watch-Thread beim Wiedereinsteigen
+    -- ins gleiche Fahrzeug alle Flags zurücksetzt.
+    suppressReset = true
+
+    -- Nur das Horn stoppen
+    if hornActive then
+        hornActive = false
+        SendNUIMessage({ action = 'horn', active = false })
+    end
+
+    -- manualModeActive bleibt erhalten → UseSirenAsHorn(veh, true) bleibt
+    -- lightsAreOn / sirenIsOn bleiben erhalten → Sound + Blinker laufen weiter
+    -- activeSoundId bleibt → StopSound wird NICHT aufgerufen
+
+    if Config and Config.Debug then
+        print('^3[SmartSiren]^7 Ausgestiegen – Sirene/Licht laufen weiter')
     end
 end)
 
@@ -263,32 +269,49 @@ Citizen.CreateThread(function()
 
         if DoesEntityExist(veh) then
             if veh ~= lastVehicle then
-                lastVehicle      = veh
-                -- Sauberer Reset beim Fahrzeugwechsel
-                sirenIsOn        = false
-                lightsAreOn      = false
-                manualModeActive = false
-                activeSoundId    = nil
-                UseSirenAsHorn(veh, false)
-                applyNativeState(veh) -- Siren=false, Mute=false
+                if suppressReset then
+                    -- Wiedereinsteigen ins gleiche (oder ein anderes) Fahrzeug
+                    -- direkt nach Aussteigen: suppressReset deaktivieren.
+                    -- main.lua wird via setSiren/setLights den State neu setzen.
+                    suppressReset = false
+                    lastVehicle   = veh
+                else
+                    -- Normaler Fahrzeugwechsel → alten Sound stoppen und resetten
+                    if activeSoundId ~= nil then
+                        StopSound(activeSoundId)
+                        ReleaseSoundId(activeSoundId)
+                        activeSoundId = nil
+                    end
+
+                    lastVehicle      = veh
+                    sirenIsOn        = false
+                    lightsAreOn      = false
+                    manualModeActive = false
+                    hornActive       = false
+                    UseSirenAsHorn(veh, false)
+                    applyNativeState(veh) -- Siren=false, Mute=false
+                end
 
                 if Config.Debug then
                     print('^3[SmartSiren]^7 Fahrzeug: '
                         .. GetDisplayNameFromVehicleModel(GetEntityModel(veh)):lower()
                         .. ' | Klasse: ' .. GetVehicleClass(veh))
                 end
-            end
+            end -- if veh ~= lastVehicle
         else
             if lastVehicle then
                 local lv = lastVehicle
                 lastVehicle = nil
-                TriggerEvent('smartsiren:client:vehicleLeft')
+                -- FIX BUG A: lv als Parameter übergeben, da lastVehicle
+                -- bereits nil ist wenn der Handler läuft!
+                TriggerEvent('smartsiren:client:vehicleLeft', lv)
             end
         end
     end
 end)
 
 -- ── Remote Sync ───────────────────────────────────────────────
+-- FIX BUG 3: isLocal=false → triggert KEINEN Server-Event
 AddEventHandler('smartsiren:client:applyRemoteLights', function(netId, on)
     local veh = NetToVeh(netId)
     if not DoesEntityExist(veh) then return end
@@ -297,6 +320,8 @@ AddEventHandler('smartsiren:client:applyRemoteLights', function(netId, on)
 end)
 
 -- ── Hilfsfunktion: Ist dieses Fahrzeug in der Config oder Klasse 18? ─────
+-- Wird mehrfach verwendet (Radio, Control-Blocker).
+-- Gecacht pro Fahrzeug-Handle um den pairs()-Loop nicht jeden Frame zu laufen.
 local configVehCache = {} -- [entityHandle] = true/false
 
 local function isConfiguredVehicle(veh)
@@ -335,6 +360,9 @@ Citizen.CreateThread(function()
 end)
 
 -- ── Radio komplett deaktivieren ───────────────────────────────
+-- Beim Einsteigen sofort ausschalten.
+-- GTA schaltet das Radio manchmal selbst wieder ein (z.B. nach Werbung),
+-- daher wird es auch im Control-Blocker-Loop jedes Frame erzwungen.
 AddEventHandler('baseevents:enteredVehicle', function(vehicle, seat, displayName)
     if isConfiguredVehicle(vehicle) then
         SetVehRadioStation(vehicle, 'OFF')

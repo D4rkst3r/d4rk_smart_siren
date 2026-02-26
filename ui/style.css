@@ -220,6 +220,7 @@ html, body {
 .btn-horn {
   width: clamp(70px, 5vw, 105px);
 }
+.btn-horn.active,
 .btn-horn.pressed {
   /* Same as .btn:active but with stronger green glow */
   background: linear-gradient(to bottom, #0d0f0d 0%, #1a1f1a 60%, #252a25 100%);
@@ -233,12 +234,8 @@ html, body {
 }
 
 
-/* ── HORN raised look (gleich wie .btn base) ─────────────────
-   btn-horn hatte keinen physischen "steht hervor"-Schatten       */
-.btn-horn {
-  width: clamp(70px, 5vw, 105px);
-  /* Inherits plastic look from .btn — no overrides needed */
-}
+/* ── HORN raised look ───────────────────────────────────────
+   Erbt alles vom .btn base — kein Override nötig               */
 
 /* ── STOP Button ─────────────────────────────────────────────
    Immer rot — signalisiert "alles aus"                          */

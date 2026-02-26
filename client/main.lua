@@ -76,14 +76,12 @@ end
 -- ── NUI Update ────────────────────────────────────────────────
 local function updateNUI()
     SendNUIMessage({
-        action       = 'update',
-        visible      = inVehicle,
-        sirenIndex   = state.sirenIndex,
-        lightsOn     = state.lightsOn,
-        sirenTones   = activeTones,
-        vehicleLabel = activeVehCfg and (activeVehCfg.label or 'D4rk Smart Siren') or 'D4rk Smart Siren',
-        isDriver     = isDriver,
-        lang         = Config.Translations[Config.Language],
+        action     = 'update',
+        visible    = inVehicle,
+        sirenIndex = state.sirenIndex,
+        lightsOn   = state.lightsOn,
+        sirenTones = activeTones,
+        -- isDriver/vehicleLabel/lang werden nicht mehr von der UI genutzt
     })
 end
 
@@ -222,10 +220,30 @@ Citizen.CreateThread(function()
                 currentVeh   = veh
                 inVehicle    = true
                 isDriver     = (seat == -1)
-                state        = { sirenIndex = 1, lightsOn = false }
                 activeVehCfg = getVehicleConfig(GetEntityModel(veh))
                 buildActiveTones(activeVehCfg)
-                dbg('Eingestiegen: ' .. GetDisplayNameFromVehicleModel(GetEntityModel(veh)))
+
+                if veh == lastExitedVeh then
+                    -- Gleiches Fahrzeug wieder betreten → State wiederherstellen.
+                    -- vehicle.lua hat das Fzg inzwischen als "neu" erkannt und
+                    -- alle Flags zurückgesetzt. Wir müssen Sirene + Licht
+                    -- explizit neu anwenden damit GTA-Natives wieder stimmen.
+                    local tone = activeTones[state.sirenIndex]
+                    if tone then
+                        TriggerEvent('smartsiren:client:setSiren', tone.entry)
+                    end
+                    if state.lightsOn then
+                        TriggerEvent('smartsiren:client:setLights', true)
+                    end
+                    dbg('Wiedereingestiegen – State re-applied (sirenIndex='
+                        .. tostring(state.sirenIndex) .. ' lightsOn='
+                        .. tostring(state.lightsOn) .. ')')
+                else
+                    -- Neues Fahrzeug → sauber starten
+                    state = { sirenIndex = 1, lightsOn = false }
+                    dbg('Eingestiegen (neu): ' .. GetDisplayNameFromVehicleModel(GetEntityModel(veh)))
+                end
+                lastExitedVeh = 0
                 updateNUI()
             elseif (seat == -1) ~= isDriver then
                 -- FIX BUG 9: Sitz-Wechsel (Fahrer ↔ Beifahrer) korrekt tracken
@@ -235,14 +253,17 @@ Citizen.CreateThread(function()
             end
         else
             if inVehicle then
-                inVehicle  = false
-                currentVeh = 0
-                isDriver   = false
-                state      = { sirenIndex = 1, lightsOn = false }
-                -- FIX BUG 8: closeInteract statt inline-Code
+                inVehicle     = false
+                lastExitedVeh = currentVeh   -- merken welches Fzg verlassen
+                currentVeh    = 0
+                isDriver      = false
+                -- State NICHT nullen: Sirene/Licht laufen am Fahrzeug weiter.
+                -- Beim Wiedereinsteigen zeigt die UI den korrekten Zustand.
                 closeInteract()
                 updateNUI()
-                dbg('Ausgestiegen')
+                dbg('Ausgestiegen – State behalten (sirenIndex='
+                    .. tostring(state.sirenIndex) .. ' lightsOn='
+                    .. tostring(state.lightsOn) .. ')')
             end
         end
     end

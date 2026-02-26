@@ -6,7 +6,6 @@ const bottomRow = document.getElementById("bottomRow");
 const btnLight = document.getElementById("btnLight");
 const btnStop = document.getElementById("btnStop");
 
-let panelHidden = false;
 let state = { visible: false, sirenIndex: 1, lightsOn: false, sirenTones: [] };
 
 function nuiPost(action, data) {
