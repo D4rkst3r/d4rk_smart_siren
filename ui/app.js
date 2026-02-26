@@ -1,10 +1,10 @@
 'use strict';
 
-const hud       = document.getElementById('hud');
-const toneRow   = document.getElementById('toneRow');
-const btnStop   = document.getElementById('btnStop');
-const btnLight  = document.getElementById('btnLight');
-const btnHide   = document.getElementById('btnHide');
+const hud      = document.getElementById('hud');
+const toneRow  = document.getElementById('toneRow');
+const btnStop  = document.getElementById('btnStop');
+const btnLight = document.getElementById('btnLight');
+const btnHide  = document.getElementById('btnHide');
 
 let panelHidden = false;
 let state = { visible: false, sirenIndex: 1, lightsOn: false, sirenTones: [] };
@@ -18,23 +18,24 @@ function nuiPost(action, data) {
 }
 
 // ── Render Tone Buttons ───────────────────────────────────────
-const LABEL_MAP = {
-  'off':'OFF', 'wail':'WAIL', 'yelp':'YELP',
-  'phaser':'PHSR', 'hilo':'HILO', 'manual':'HORN'
-};
-
 function renderTones(tones, activeIdx) {
   toneRow.innerHTML =
-    `<button class="btn btn-tone" id="btnMix"><span class="btn-led"></span>MIX</button>` +
-    `<button class="btn btn-tone" id="btnFast"><span class="btn-led"></span>FAST</button>`;
+    `<button class="btn btn-tone"><span class="btn-led"></span>MIX</button>` +
+    `<button class="btn btn-tone"><span class="btn-led"></span>FAST</button>`;
 
   tones.forEach((t, i) => {
-    const btn = document.createElement('button');
-    const isHorn = t.id === 'manual';
-    btn.className = 'btn btn-tone' + (isHorn ? ' btn-horn' : '') + (i + 1 === activeIdx ? ' active' : '');
+    const btn     = document.createElement('button');
+    const isHorn  = t.id === 'manual';
+    const isOff   = t.id === 'off';
+    const isActive = (i + 1) === activeIdx;
+
+    btn.className = 'btn btn-tone'
+      + (isHorn  ? ' btn-horn'  : '')
+      + (isActive ? ' active'   : '');
+
     btn.dataset.id  = t.id;
     btn.dataset.idx = i + 1;
-    btn.innerHTML   = `<span class="btn-led"></span>${LABEL_MAP[t.id] || t.label.toUpperCase()}`;
+    btn.innerHTML   = `<span class="btn-led"></span>${t.label.toUpperCase()}`;
 
     if (isHorn) {
       btn.addEventListener('mousedown',  () => { btn.classList.add('pressed');    nuiPost('hornPress'); });
@@ -47,7 +48,7 @@ function renderTones(tones, activeIdx) {
   });
 }
 
-// ── LIGHT toggle ──────────────────────────────────────────────
+// ── LIGHT ─────────────────────────────────────────────────────
 btnLight.innerHTML = '<span class="btn-led"></span>LIGHT';
 btnLight.addEventListener('click', () => nuiPost('toggleLights'));
 
@@ -62,25 +63,23 @@ btnHide.addEventListener('click', () => {
 
 // ── Apply state ───────────────────────────────────────────────
 function applyState(data) {
-  if (data.visible      !== undefined) state.visible      = data.visible;
-  if (data.sirenTones)                 state.sirenTones   = data.sirenTones;
-  if (data.sirenIndex   !== undefined) state.sirenIndex   = data.sirenIndex;
-  if (data.lightsOn     !== undefined) state.lightsOn     = data.lightsOn;
+  if (data.visible    !== undefined) state.visible    = data.visible;
+  if (data.sirenTones)               state.sirenTones = data.sirenTones;
+  if (data.sirenIndex !== undefined) state.sirenIndex = data.sirenIndex;
+  if (data.lightsOn   !== undefined) state.lightsOn   = data.lightsOn;
 
   hud.classList.toggle('hidden',  !state.visible);
   hud.classList.toggle('visible',  state.visible);
   if (panelHidden) hud.style.opacity = '0';
 
   if (data.vehicleLabel !== undefined)
-    document.getElementById('lblVehicle').textContent = data.vehicleLabel || 'SmartSirenSM';
+    document.getElementById('lblVehicle').textContent = data.vehicleLabel || 'D4rk Smart Siren';
 
   if (data.lang && data.isDriver !== undefined)
     document.getElementById('lblSeat').textContent =
       data.isDriver ? (data.lang.driver || 'Fahrer') : (data.lang.passenger || 'Beifahrer');
 
   renderTones(state.sirenTones, state.sirenIndex);
-
-  // LIGHT button active glow
   btnLight.classList.toggle('active', state.lightsOn);
 }
 

@@ -5,14 +5,16 @@
 local inVehicle  = false
 local currentVeh = 0
 local isDriver   = false
+local interactMode = false
 
 local state = {
-    sirenIndex = 1,   -- 1 = erste Tone (OFF)
+    sirenIndex = 1,   -- 1 = erster Eintrag (immer 'off')
     lightsOn   = false,
 }
 
 local activeVehCfg = nil
 local activeTones  = {}
+-- activeTones[i] = 'off' | 'manual' | <Siren-ID (number)>
 
 -- ── Helpers ───────────────────────────────────────────────────
 local function dbg(msg)
@@ -30,17 +32,31 @@ end
 
 local function getVehicleConfig(model)
     local name = GetDisplayNameFromVehicleModel(model):lower()
+    -- Zuerst exakten Match suchen
     for k, cfg in pairs(Config.Vehicles) do
-        if k:lower() == name or GetHashKey(k) == model then return cfg end
+        if k ~= 'DEFAULT' and k:lower() == name then return cfg end
     end
-    return Config.DefaultPreset
+    -- Fallback auf DEFAULT
+    return Config.Vehicles['DEFAULT'] or { tones = { 'off', 2, 3, 4, 'manual' }, extras = {} }
 end
 
-local function buildFilteredTones(cfg)
+-- Baut activeTones aus cfg.tones auf.
+-- Gibt pro Eintrag ein Table zurück das NUI-kompatibel ist:
+--   { entry='off',    label='OFF'  }
+--   { entry='manual', label='HORN' }
+--   { entry=2,        label='Wail' }
+local function buildActiveTones(cfg)
     activeTones = {}
-    for _, tone in ipairs(Config.SirenTones) do
-        for _, allowed in ipairs(cfg.allowedSirenTones) do
-            if tone.id == allowed then activeTones[#activeTones+1] = tone end
+    for _, toneEntry in ipairs(cfg.tones or {}) do
+        if toneEntry == 'off' then
+            activeTones[#activeTones+1] = { entry='off', id='off', label='OFF' }
+        elseif toneEntry == 'manual' then
+            activeTones[#activeTones+1] = { entry='manual', id='manual', label='HORN' }
+        else
+            local siren = Config.Sirens[toneEntry]
+            if siren then
+                activeTones[#activeTones+1] = { entry=toneEntry, id='siren_'..toneEntry, label=siren.Name }
+            end
         end
     end
 end
@@ -53,7 +69,7 @@ local function updateNUI()
         sirenIndex   = state.sirenIndex,
         lightsOn     = state.lightsOn,
         sirenTones   = activeTones,
-        vehicleLabel = activeVehCfg and (activeVehCfg.label or '') or '',
+        vehicleLabel = activeVehCfg and (activeVehCfg.label or 'D4rk Smart Siren') or 'D4rk Smart Siren',
         isDriver     = isDriver,
         lang         = Config.Translations[Config.Language],
     })
@@ -64,16 +80,10 @@ local function setSirenByIndex(idx)
     if #activeTones == 0 then return end
     idx = math.max(1, math.min(idx, #activeTones))
     state.sirenIndex = idx
-    TriggerEvent('smartsiren:client:setSiren', activeTones[idx].id)
-    dbg('Siren → ' .. activeTones[idx].id)
+    local tone = activeTones[idx]
+    TriggerEvent('smartsiren:client:setSiren', tone.entry)
+    dbg('Siren → ' .. tostring(tone.entry) .. ' (' .. tone.label .. ')')
     updateNUI()
-end
-
-local function cycleSiren(dir)
-    local next = state.sirenIndex + dir
-    if next > #activeTones then next = 1 end
-    if next < 1             then next = #activeTones end
-    setSirenByIndex(next)
 end
 
 -- ── Blaulicht toggle ──────────────────────────────────────────
@@ -85,14 +95,12 @@ local function toggleLights()
 end
 
 -- ── Keybinds ──────────────────────────────────────────────────
--- Q = Blaulicht an/aus
 RegisterCommand('ss_lights', function()
     if not inVehicle then return end
     toggleLights()
 end, false)
 RegisterKeyMapping('ss_lights', 'Sirene: Blaulicht an/aus', 'keyboard', Config.Keys.LightsNext)
 
--- Direkte Siren-Slots 1–9
 for i = 1, 9 do
     local slot = i
     RegisterCommand('ss_tone_' .. slot, function()
@@ -102,20 +110,15 @@ for i = 1, 9 do
     RegisterKeyMapping('ss_tone_' .. slot, 'Sirene: Ton ' .. slot, 'keyboard', Config.Keys.Tones[slot] or '')
 end
 
--- E = Horn (halten)
 RegisterCommand('+ss_horn', function()
     if not inVehicle or not isDriver then return end
     TriggerEvent('smartsiren:client:horn', true)
-    updateNUI()
 end, false)
 RegisterCommand('-ss_horn', function()
     TriggerEvent('smartsiren:client:horn', false)
-    updateNUI()
 end, false)
 RegisterKeyMapping('+ss_horn', 'Sirene: Tröte / Horn halten', 'keyboard', Config.Keys.Horn)
 
--- CAPSLOCK = Maus-Interaktion Panel
-local interactMode = false
 RegisterCommand('ss_interact', function()
     if not inVehicle then return end
     interactMode = not interactMode
@@ -124,7 +127,7 @@ RegisterCommand('ss_interact', function()
 end, false)
 RegisterKeyMapping('ss_interact', 'Sirene: Panel Maus-Interaktion', 'keyboard', Config.Keys.Interact or 'CAPSLOCK')
 
--- ── NUI Callbacks (Panel-Klicks) ──────────────────────────────
+-- ── NUI Callbacks ─────────────────────────────────────────────
 RegisterNUICallback('setSiren', function(data, cb)
     if not inVehicle then cb({}) return end
     local idx = tonumber(data.index)
@@ -152,7 +155,7 @@ RegisterNUICallback('stop', function(_, cb)
     if not inVehicle then cb({}) return end
     state.sirenIndex = 1
     state.lightsOn   = false
-    TriggerEvent('smartsiren:client:setSiren', activeTones[1] and activeTones[1].id or 'off')
+    TriggerEvent('smartsiren:client:setSiren', 'off')
     TriggerEvent('smartsiren:client:setLights', false)
     updateNUI()
     cb({})
@@ -179,7 +182,7 @@ Citizen.CreateThread(function()
                 isDriver     = (seat == -1)
                 state        = { sirenIndex = 1, lightsOn = false }
                 activeVehCfg = getVehicleConfig(GetEntityModel(veh))
-                buildFilteredTones(activeVehCfg)
+                buildActiveTones(activeVehCfg)
                 dbg('Eingestiegen: ' .. GetDisplayNameFromVehicleModel(GetEntityModel(veh)))
                 updateNUI()
             elseif (seat == -1) ~= isDriver then
