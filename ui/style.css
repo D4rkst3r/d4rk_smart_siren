@@ -95,30 +95,24 @@ html, body {
   justify-content: center;
 }
 
-/* ══ BUTTON – physischer Look ════════════════════════════════
-   Ebenen von unten nach oben:
-   1. Äußerer Rand (border): grüner Neon-Rand
-   2. Körper: dunkler Verlauf von oben (hell) nach unten (dunkel)
-      → simuliert Lichteinfall von oben
-   3. Innen-Highlight oben: weißer 1px Streifen → Kante die Licht fängt
-   4. Innen-Schatten unten: dunkler Streifen → Tiefe nach unten
-   5. Glow außen: grüner Neon-Schimmer
-   Beim Drücken:
-   - Verlauf invertiert (jetzt dunkel oben, hell unten)
-   - Innen-Schatten oben → Button wirkt eingedrückt
-   - kein translateY nötig, Schatten allein reicht
+/* ══ BUTTON – Gummierter Plastik-Look + Neon-Glow ════════════
+   Kombination aus:
+   - Neumorphic: äußere Höhen-/Tiefenschatten (Button steht hervor)
+   - Plastik-Oberfläche: Verlauf top→bottom + Innen-Highlight
+   - Neon-Rand + Glow für den Panel-Stil
 ════════════════════════════════════════════════════════════ */
 .btn {
-  /* Körper: hell oben, dunkel unten → Licht von oben */
+  /* Gummierter Plastik-Verlauf: leicht heller oben → dunkler unten */
   background: linear-gradient(
-    180deg,
-    rgba(60,70,60,0.6)  0%,
-    rgba(10,14,10,0.85) 60%,
-    rgba(0,0,0,0.95)    100%
+    to bottom,
+    #2e3830 0%,
+    #1a1f1a 55%,
+    #0d0f0d 100%
   );
 
-  border: 2px solid var(--green);
-  border-radius: 0.3vw;
+  border: 1.5px solid var(--green);
+  border-bottom: 2px solid rgba(0,0,0,0.7);  /* dunklere Unterkante = Tiefe */
+  border-radius: 5px;
   color: var(--green-text);
 
   font-family: var(--font);
@@ -136,50 +130,53 @@ html, body {
   box-shadow:
     /* Neon-Außen-Glow */
     0 0 0.5vw var(--green-glow),
-    0 0 1vw rgba(0,255,102,0.2),
-    /* Physische Tiefe: unterer Rand dunkler → Button steht hervor */
-    0 3px 0 rgba(0,0,0,0.8),
-    0 4px 6px rgba(0,0,0,0.6),
-    /* Innen-Highlight oben */
-    inset 0 1px 0 rgba(255,255,255,0.12),
-    /* Innen-Schatten unten */
-    inset 0 -2px 4px rgba(0,0,0,0.6),
+    0 0 1vw rgba(0,255,102,0.15),
+    /* Neumorphic: Button steht aus Panel hervor */
+    3px 3px 6px rgba(0,0,0,0.7),
+    -1px -1px 4px rgba(255,255,255,0.03),
+    /* Plastik: Innen-Highlight oben (Licht von oben) */
+    inset 0 2px 2px rgba(255,255,255,0.1),
+    /* Plastik: Innen-Schatten unten (Tiefe) */
+    inset 0 -2px 3px rgba(0,0,0,0.6),
     /* Neon-Innen-Schimmer */
-    inset 0 0 0.4vw rgba(0,255,102,0.06);
+    inset 0 0 0.5vw rgba(0,255,102,0.05);
 
   text-shadow:
     0 0 0.5vw var(--green-glow),
-    0 0 0.9vw rgba(0,255,102,0.4);
+    0 0 0.9vw rgba(0,255,102,0.35);
 
-  transition: box-shadow 0.06s, background 0.06s, transform 0.05s;
+  transition: box-shadow 0.1s ease, background 0.1s ease, transform 0.08s ease;
 
   display: flex;
   align-items: center;
   justify-content: center;
-
-  /* Verhindert dass Text durch Schatten-Offset verrutscht */
   position: relative;
   top: 0;
 }
 
-/* Gedrückt: Button sinkt ein */
+.btn:hover {
+  filter: brightness(1.08);
+}
+
+/* Gedrückt: sinkt in die Oberfläche ein (Neumorphic inset) */
 .btn:active,
 .btn.pressed {
   background: linear-gradient(
-    180deg,
-    rgba(0,0,0,0.95)    0%,
-    rgba(10,14,10,0.85) 40%,
-    rgba(40,55,40,0.5)  100%
+    to bottom,
+    #0d0f0d 0%,
+    #1a1f1a 60%,
+    #252a25 100%
   );
-  box-shadow:
-    0 0 0.4vw var(--green-glow),
-    /* Kein unterer Schatten → Button liegt jetzt flach/eingedrückt */
-    0 1px 0 rgba(0,0,0,0.8),
-    /* Innen-Schatten oben → simuliert eingedrückten Zustand */
-    inset 0 2px 6px rgba(0,0,0,0.9),
-    inset 0 1px 3px rgba(0,0,0,0.7),
-    inset 0 0 0.4vw rgba(0,255,102,0.08);
   transform: translateY(2px);
+  box-shadow:
+    /* Neon bleibt, wird etwas schwächer */
+    0 0 0.4vw var(--green-glow),
+    /* Neumorphic inset: Button ist jetzt eingedrückt */
+    inset 3px 3px 6px rgba(0,0,0,0.8),
+    inset -1px -1px 3px rgba(255,255,255,0.02),
+    /* Plastik: Innen-Schatten oben stärker */
+    inset 0 3px 4px rgba(0,0,0,0.8),
+    inset 0 0 0.4vw rgba(0,255,102,0.06);
 }
 
 /* ── Tone Buttons ─────────────────────────────────────────── */
@@ -191,23 +188,18 @@ html, body {
 /* Aktiver Ton: rot wie HORN */
 .btn-tone.active {
   border-color: var(--red);
+  border-bottom-color: rgba(0,0,0,0.7);
   color: #ff4455;
-  background: linear-gradient(
-    180deg,
-    rgba(40,0,5,0.8)   0%,
-    rgba(20,0,3,0.95)  100%
-  );
+  /* Plastik eingedrückt + rot */
+  background: linear-gradient(to bottom, #1a0003 0%, #2a0005 60%, #1a0003 100%);
+  text-shadow: 0 0 0.6vw var(--red), 0 0 1.2vw rgba(255,34,51,0.6);
+  transform: translateY(2px);
   box-shadow:
     0 0 0.7vw var(--red-glow),
-    0 0 1.4vw rgba(255,34,51,0.35),
-    0 0 2.5vw rgba(255,34,51,0.12),
-    0 1px 0 rgba(0,0,0,0.8),
-    inset 0 2px 5px rgba(0,0,0,0.8),
-    inset 0 0 0.5vw rgba(255,34,51,0.15);
-  text-shadow:
-    0 0 0.6vw var(--red),
-    0 0 1.2vw rgba(255,34,51,0.6);
-  transform: translateY(1px);
+    0 0 1.4vw rgba(255,34,51,0.3),
+    inset 3px 3px 6px rgba(0,0,0,0.8),
+    inset 0 3px 4px rgba(0,0,0,0.8),
+    inset 0 0 0.5vw rgba(255,34,51,0.12);
 }
 
 /* ── LIGHTS ───────────────────────────────────────────────── */
@@ -216,22 +208,12 @@ html, body {
 }
 .btn-lights.active {
   border-color: var(--red);
+  border-bottom-color: rgba(0,0,0,0.7);
   color: #ff4455;
-  background: linear-gradient(
-    180deg,
-    rgba(40,0,5,0.8)   0%,
-    rgba(20,0,3,0.95)  100%
-  );
-  text-shadow:
-    0 0 0.5vw var(--red-glow),
-    0 0 1vw rgba(255,34,51,0.4);
-  box-shadow:
-    0 0 0.6vw var(--red-glow),
-    0 0 1.2vw rgba(255,34,51,0.3),
-    0 1px 0 rgba(0,0,0,0.8),
-    inset 0 2px 5px rgba(0,0,0,0.8),
-    inset 0 0 0.5vw rgba(255,34,51,0.1);
-  transform: translateY(1px);
+  background: linear-gradient(to bottom, #1a0003 0%, #2a0005 60%, #1a0003 100%);
+  text-shadow: 0 0 0.5vw var(--red-glow), 0 0 1vw rgba(255,34,51,0.4);
+  transform: translateY(2px);
+  animation: lightspulse 1.2s ease-in-out infinite;
 }
 
 /* ── HORN ─────────────────────────────────────────────────── */
@@ -239,16 +221,68 @@ html, body {
   width: clamp(70px, 5vw, 105px);
 }
 .btn-horn.pressed {
-  background: linear-gradient(
-    180deg,
-    rgba(0,0,0,0.95)    0%,
-    rgba(0,30,12,0.85)  100%
-  );
+  /* Same as .btn:active but with stronger green glow */
+  background: linear-gradient(to bottom, #0d0f0d 0%, #1a1f1a 60%, #252a25 100%);
+  transform: translateY(2px);
   box-shadow:
     0 0 0.8vw var(--green-glow),
-    0 0 1.6vw rgba(0,255,102,0.4),
-    0 1px 0 rgba(0,0,0,0.8),
-    inset 0 2px 6px rgba(0,0,0,0.9),
-    inset 0 0 0.6vw rgba(0,255,102,0.12);
+    0 0 1.6vw rgba(0,255,102,0.35),
+    inset 3px 3px 6px rgba(0,0,0,0.8),
+    inset 0 3px 4px rgba(0,0,0,0.8),
+    inset 0 0 0.6vw rgba(0,255,102,0.1);
+}
+
+
+/* ── HORN raised look (gleich wie .btn base) ─────────────────
+   btn-horn hatte keinen physischen "steht hervor"-Schatten       */
+.btn-horn {
+  width: clamp(70px, 5vw, 105px);
+  /* Inherits plastic look from .btn — no overrides needed */
+}
+
+/* ── STOP Button ─────────────────────────────────────────────
+   Immer rot — signalisiert "alles aus"                          */
+.btn-stop {
+  width: clamp(60px, 4.5vw, 95px);
+  border-color: var(--red);
+  border-bottom-color: rgba(0,0,0,0.7);
+  color: #ff4455;
+  /* Plastik-Verlauf in rot */
+  background: linear-gradient(to bottom, #2e0a0a 0%, #1a0303 55%, #0d0101 100%);
+  text-shadow: 0 0 0.5vw var(--red-glow), 0 0 0.9vw rgba(255,34,51,0.35);
+  box-shadow:
+    0 0 0.5vw var(--red-glow),
+    0 0 1vw rgba(255,34,51,0.15),
+    3px 3px 6px rgba(0,0,0,0.7),
+    -1px -1px 4px rgba(255,255,255,0.02),
+    inset 0 2px 2px rgba(255,100,100,0.08),
+    inset 0 -2px 3px rgba(0,0,0,0.6),
+    inset 0 0 0.5vw rgba(255,34,51,0.06);
+}
+.btn-stop:active {
+  background: linear-gradient(to bottom, #0d0101 0%, #1a0303 60%, #220505 100%);
   transform: translateY(2px);
+  box-shadow:
+    0 0 0.4vw var(--red-glow),
+    inset 3px 3px 6px rgba(0,0,0,0.85),
+    inset 0 3px 4px rgba(0,0,0,0.8),
+    inset 0 0 0.5vw rgba(255,34,51,0.1);
+}
+
+/* ── LIGHTS blinkt wenn aktiv ────────────────────────────────
+   Subtile Puls-Animation zeigt dass Blaulicht wirklich läuft   */
+@keyframes lightspulse {
+  0%, 100% { box-shadow:
+    0 0 0.6vw var(--red-glow),
+    0 0 1.2vw rgba(255,34,51,0.3),
+    inset 3px 3px 6px rgba(0,0,0,0.8),
+    inset 0 3px 4px rgba(0,0,0,0.8),
+    inset 0 0 0.5vw rgba(255,34,51,0.1); }
+  50% { box-shadow:
+    0 0 1.4vw var(--red-glow),
+    0 0 2.8vw rgba(255,34,51,0.5),
+    0 0 4vw rgba(255,34,51,0.18),
+    inset 3px 3px 6px rgba(0,0,0,0.8),
+    inset 0 3px 4px rgba(0,0,0,0.8),
+    inset 0 0 0.8vw rgba(255,34,51,0.16); }
 }

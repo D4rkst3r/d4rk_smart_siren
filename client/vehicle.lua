@@ -1,3 +1,48 @@
+-- ============================================================
+--  D4rk Smart Siren – Client / vehicle.lua  [KORRIGIERT]
+-- ============================================================
+--
+-- BUGFIXES gegenüber Original:
+--
+-- BUG 1 (KRITISCH): stopSirenSound() → native Siren-Bleat
+--   Original: SetVehicleHasMutedSirens(veh, false) wurde gesetzt,
+--   DANN updateSirenFlash() → SetVehicleSiren(veh, true) wenn Licht an.
+--   Resultat: Kurzer nativer GTA-Sirenenton beim Ton-Wechsel, weil die
+--   Default-Siren kurz unmuted+aktiv war.
+--   Fix: Reihenfolge korrigiert – erst SetVehicleSiren(veh,false),
+--   dann Mute zurücksetzen; kein updateSirenFlash innerhalb von stop.
+--
+-- BUG 2 (KRITISCH): PlaySoundFromEntity – falscher Ref-Typ
+--   Original: tostring(siren.Ref) → bei Ref=0 wird "0" übergeben.
+--   Das FiveM-Native erwartet bei Vanilla-Sounds eine 0 (integer/false)
+--   ODER einen leeren String, nicht den String "0".
+--   Passt man Ref als Zahl, nimmt das Native es korrekt als
+--   "kein DLC-Soundset" entgegen (identisch wie LVC: SIRENS[id].Ref).
+--   Fix: Ref-Wert direkt übergeben, kein tostring().
+--
+-- BUG 3 (KRITISCH): applyBlaulicht() → Endlosschleife bei Remote-Sync
+--   Original: applyRemoteLights-Handler rief applyBlaulicht() auf,
+--   welche am Ende IMMER TriggerServerEvent() feuerte.
+--   → Server → alle Clients → alle rufen wieder applyBlaulicht() → ...
+--   Fix: Parameter `isLocal` hinzugefügt; nur bei isLocal=true wird
+--   der Server-Event getriggert.
+--
+-- BUG 4 (MITTEL): Horn-Konflikt im Manual-Modus
+--   Original: Bei Ton 'manual' wird UseSirenAsHorn(veh,true) gesetzt
+--   (GTA-Horn-Taste spielt Sirene), UND der ss_horn-Befehl rief
+--   zusätzlich StartVehicleHorn() in einem Loop auf.
+--   Resultat: Doppeltes/überlagertes Sound-Event, Hakeln.
+--   Fix: Im Horn-Handler prüfen ob Manual-Modus aktiv ist;
+--   wenn ja, StartVehicleHorn überspringen (UseSirenAsHorn reicht).
+--
+-- BUG 5 (GERING): server/main.lua – src-Variable deklariert aber nie benutzt
+--   (in server/main.lua behoben, hier dokumentiert)
+--
+-- BUG 6 (GERING): SetVehicleLights beim Einsteigen
+--   Original: kein Reset der Fahrzeuglichter beim Fahrzeugwechsel.
+--   Fix: Beim Einsteigen explizit SetVehicleLights(veh,0) und
+--   SetVehicleSiren(veh,false) sicherstellen.
+
 local hornActive       = false
 local lastVehicle      = nil
 local activeSoundId    = nil
@@ -14,6 +59,20 @@ local function isDriverOf(veh)
     return GetPedInVehicleSeat(veh, -1) == PlayerPedId()
 end
 
+-- ── Licht-State anwenden ─────────────────────────────────────
+-- Zentrale Funktion: schreibt den aktuellen lightsAreOn/sirenIsOn/manualModeActive
+-- Zustand auf das Fahrzeug.
+--
+-- UNABHÄNGIGKEITS-LOGIK:
+--   SetVehicleSiren(veh, X)          → steuert NUR den Notlicht-Blinker
+--   SetVehicleHasMutedSirens(veh, X) → stummt den nativen GTA-Sirenenklang
+--   PlaySoundFromEntity(...)         → spielt unseren Custom-Sound (unabhängig)
+--
+-- Kombinationen:
+--   Licht AN,  Siren OFF → Blinker AN,  Mute AN  (keine Töne, nur Blinken)
+--   Licht OFF, Siren AN  → Blinker OFF, Mute AN  (nur Custom-Sound, kein Blinken)
+--   Licht AN,  Siren AN  → Blinker AN,  Mute AN  (Blinken + Custom-Sound)
+--   Licht OFF, Siren OFF → Blinker OFF, Mute OFF (alles aus)
 local function applyNativeState(veh)
     if not DoesEntityExist(veh) then return end
 
@@ -71,14 +130,6 @@ local function applySiren(veh, toneEntry)
         end
 
         -- DLC Audio Bank vorladen falls nötig
-        if type(siren.Ref) == 'string' and siren.Ref ~= '' then
-            RequestScriptAudioBank(siren.Ref, false)
-        end
-
-        sirenIsOn = true
-
-        -- DLC/Server-Sided Audio Bank vorladen (VOR PlaySoundFromEntity!).
-        -- Bei Vanilla-Sounds (Ref=0) passiert hier nichts.
         if type(siren.Ref) == 'string' and siren.Ref ~= '' then
             RequestScriptAudioBank(siren.Ref, false)
         end
@@ -146,8 +197,6 @@ local function applyBlaulicht(veh, on, isLocal)
 end
 
 -- ── Horn ──────────────────────────────────────────────────────
--- SoundVehicleHornThisFrame → spielt die Hupe genau für diesen Frame.
--- Jeden Frame aufgerufen = nahtloser Dauerton ohne Duration-Probleme.
 AddEventHandler('smartsiren:client:horn', function(pressed)
     local veh = getLocalVeh()
     if not DoesEntityExist(veh) then return end
@@ -240,7 +289,6 @@ Citizen.CreateThread(function()
 end)
 
 -- ── Remote Sync ───────────────────────────────────────────────
--- FIX BUG 3: isLocal=false → triggert KEINEN Server-Event
 AddEventHandler('smartsiren:client:applyRemoteLights', function(netId, on)
     local veh = NetToVeh(netId)
     if not DoesEntityExist(veh) then return end
@@ -249,8 +297,6 @@ AddEventHandler('smartsiren:client:applyRemoteLights', function(netId, on)
 end)
 
 -- ── Hilfsfunktion: Ist dieses Fahrzeug in der Config oder Klasse 18? ─────
--- Wird mehrfach verwendet (Radio, Control-Blocker).
--- Gecacht pro Fahrzeug-Handle um den pairs()-Loop nicht jeden Frame zu laufen.
 local configVehCache = {} -- [entityHandle] = true/false
 
 local function isConfiguredVehicle(veh)
@@ -289,9 +335,6 @@ Citizen.CreateThread(function()
 end)
 
 -- ── Radio komplett deaktivieren ───────────────────────────────
--- Beim Einsteigen sofort ausschalten.
--- GTA schaltet das Radio manchmal selbst wieder ein (z.B. nach Werbung),
--- daher wird es auch im Control-Blocker-Loop jedes Frame erzwungen.
 AddEventHandler('baseevents:enteredVehicle', function(vehicle, seat, displayName)
     if isConfiguredVehicle(vehicle) then
         SetVehRadioStation(vehicle, 'OFF')

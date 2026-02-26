@@ -4,6 +4,7 @@ const hud = document.getElementById("hud");
 const toneRow = document.getElementById("toneRow");
 const bottomRow = document.getElementById("bottomRow");
 const btnLight = document.getElementById("btnLight");
+const btnStop = document.getElementById("btnStop");
 
 let panelHidden = false;
 let state = { visible: false, sirenIndex: 1, lightsOn: false, sirenTones: [] };
@@ -18,7 +19,6 @@ function nuiPost(action, data) {
 
 function render(tones, activeIdx) {
   toneRow.innerHTML = "";
-  // remove old horn if re-rendering
   bottomRow.querySelectorAll(".btn-horn").forEach((el) => el.remove());
 
   tones.forEach((t, i) => {
@@ -26,7 +26,6 @@ function render(tones, activeIdx) {
 
     const isHorn = t.id === "manual";
     const isActive = i + 1 === activeIdx;
-
     const btn = document.createElement("button");
 
     if (isHorn) {
@@ -54,7 +53,8 @@ function render(tones, activeIdx) {
         btn.classList.remove("pressed");
         nuiPost("hornRelease");
       });
-      bottomRow.appendChild(btn);
+      // HORN vor STOP einfügen
+      btnStop.before(btn);
     } else {
       btn.className = "btn btn-tone" + (isActive ? " active" : "");
       btn.dataset.id = t.id;
@@ -69,6 +69,7 @@ function render(tones, activeIdx) {
 }
 
 btnLight.addEventListener("click", () => nuiPost("toggleLights"));
+btnStop.addEventListener("click", () => nuiPost("stop"));
 
 function applyState(data) {
   if (data.visible !== undefined) state.visible = data.visible;
