@@ -4,11 +4,6 @@
 --
 -- BUGFIXES:
 --
--- BUG 8 (MITTEL): NUI-Panel blieb nach Fahrzeugwechsel im falschen
---   Zustand. Der interactMode wurde beim Aussteigen zwar auf false gesetzt,
---   aber SetNuiFocusKeepInput(false) fehlte → Maus blieb gesperrt.
---   Fix: Beide NUI-Fokus-Calls beim Aussteigen.
---
 -- BUG 9 (GERING): isDriver-Flag wurde nicht aktualisiert wenn Spieler
 --   Sitz wechselt (z.B. von Beifahrer zu Fahrer nach Aussteigen des Fahrers).
 --   Fix: Sitz-Check läuft in jedem Tick, Flag wird korrekt aktualisiert.
@@ -18,18 +13,17 @@
 --   applySiren() in vehicle.lua prüft isDriverOf(). Das ist gewollt.
 --   Nur Fahrer kann Töne/Lichter steuern. UI zeigt Passagier-Status an.
 
-local inVehicle    = false
-local currentVeh   = 0
-local isDriver     = false
-local interactMode = false
-
-local state        = {
+local inVehicle     = false
+local currentVeh    = 0
+local lastExitedVeh = 0 -- letztes verlassenes Fahrzeug (für Wiedereinstieg)
+local isDriver      = false
+local state         = {
     sirenIndex = 1,
     lightsOn   = false,
 }
 
-local activeVehCfg = nil
-local activeTones  = {}
+local activeVehCfg  = nil
+local activeTones   = {}
 
 -- ── Helpers ───────────────────────────────────────────────────
 local function dbg(msg)
@@ -111,16 +105,6 @@ local function toggleLights()
     updateNUI()
 end
 
--- ── NUI-Fokus aufräumen ───────────────────────────────────────
--- FIX BUG 8: Beide NUI-Fokus-Calls beim Verlassen
-local function closeInteract()
-    if interactMode then
-        interactMode = false
-        SetNuiFocus(false, false)
-        SetNuiFocusKeepInput(false) -- War im Original vergessen!
-    end
-end
-
 -- ── Keybinds ──────────────────────────────────────────────────
 RegisterCommand('ss_lights', function()
     if not inVehicle then return end
@@ -145,14 +129,6 @@ RegisterCommand('-ss_horn', function()
     TriggerEvent('smartsiren:client:horn', false)
 end, false)
 RegisterKeyMapping('+ss_horn', 'Sirene: Tröte / Horn halten', 'keyboard', Config.Keys.Horn)
-
-RegisterCommand('ss_interact', function()
-    if not inVehicle then return end
-    interactMode = not interactMode
-    SetNuiFocus(interactMode, interactMode)
-    SetNuiFocusKeepInput(interactMode)
-end, false)
-RegisterKeyMapping('ss_interact', 'Sirene: Panel Maus-Interaktion', 'keyboard', Config.Keys.Interact or 'CAPSLOCK')
 
 -- ── NUI Callbacks ─────────────────────────────────────────────
 RegisterNUICallback('setSiren', function(data, cb)
@@ -269,7 +245,6 @@ Citizen.CreateThread(function()
                 isDriver      = false
                 -- State NICHT nullen: Sirene/Licht laufen am Fahrzeug weiter.
                 -- Beim Wiedereinsteigen zeigt die UI den korrekten Zustand.
-                closeInteract()
                 updateNUI()
                 dbg('Ausgestiegen – State behalten (sirenIndex='
                     .. tostring(state.sirenIndex) .. ' lightsOn='

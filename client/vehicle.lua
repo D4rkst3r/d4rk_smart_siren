@@ -211,6 +211,13 @@ AddEventHandler('smartsiren:client:horn', function(pressed)
         if not manualModeActive then
             Citizen.CreateThread(function()
                 while hornActive do
+                    local ped = PlayerPedId()
+                    -- Loop stoppen wenn Spieler stirbt oder ausgestiegen ist
+                    if IsPedDeadOrDying(ped, true) or not DoesEntityExist(getLocalVeh()) then
+                        hornActive = false
+                        SendNUIMessage({ action = 'horn', active = false })
+                        break
+                    end
                     local v = getLocalVeh()
                     if DoesEntityExist(v) and not manualModeActive then
                         SoundVehicleHornThisFrame(v)
@@ -234,8 +241,9 @@ end)
 
 AddEventHandler('smartsiren:client:setLights', function(on)
     local veh = getLocalVeh()
-    -- FIX BUG 3: isLocal=true → triggert Server-Event
-    if DoesEntityExist(veh) then applyBlaulicht(veh, on, true) end
+    -- isDriverOf-Check: Passagier darf Licht/Extras NICHT steuern
+    -- (applySiren hat denselben Check – Konsistenz)
+    if DoesEntityExist(veh) and isDriverOf(veh) then applyBlaulicht(veh, on, true) end
 end)
 
 AddEventHandler('smartsiren:client:vehicleLeft', function(lv)
