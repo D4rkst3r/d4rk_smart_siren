@@ -1,21 +1,9 @@
 -- ============================================================
---  D4rk Smart Siren – Server / main.lua  [KORRIGIERT]
+--  D4rk Smart Siren – Server / main.lua
 -- ============================================================
---
--- BUGFIXES:
---
--- BUG 5 (GERING): `local src = source` wurde deklariert aber nie verwendet.
---   Entfernt – source wird nur für Logging genutzt.
---
--- VERBESSERUNG: Siren-Sync überträgt jetzt auch den toneEntry-Wert
---   korrekt an alle Remote-Clients (wurde schon gemacht, aber src-Variable
---   war ungenutzt und verwirrend).
 
--- ── Rate-Limiter ──────────────────────────────────────────────
--- Verhindert Event-Spam / DoS: pro Spieler max. 1 Sync-Event
--- alle RATE_MS Millisekunden. Überschreitung → Event wird verworfen.
-local RATE_MS  = 200  -- Cooldown in ms (5 Events/Sek. max)
-local lastSync = {}   -- [playerId] = GetGameTimer()-Timestamp
+local RATE_MS  = 200 -- Cooldown in ms (5 Events/Sek. max)
+local lastSync = {}  -- [playerId] = GetGameTimer()-Timestamp
 
 local function checkRate(src)
     local now = GetGameTimer()

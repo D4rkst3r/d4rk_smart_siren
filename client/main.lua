@@ -1,17 +1,6 @@
 -- ============================================================
---  D4rk Smart Siren – Client / main.lua  [KORRIGIERT]
+--  D4rk Smart Siren – Client / main.lua 
 -- ============================================================
---
--- BUGFIXES:
---
--- BUG 9 (GERING): isDriver-Flag wurde nicht aktualisiert wenn Spieler
---   Sitz wechselt (z.B. von Beifahrer zu Fahrer nach Aussteigen des Fahrers).
---   Fix: Sitz-Check läuft in jedem Tick, Flag wird korrekt aktualisiert.
---
--- HINWEIS AllowedSeats='both':
---   Passagiere sehen das Panel, können aber keine Sirene aktivieren –
---   applySiren() in vehicle.lua prüft isDriverOf(). Das ist gewollt.
---   Nur Fahrer kann Töne/Lichter steuern. UI zeigt Passagier-Status an.
 
 local inVehicle     = false
 local currentVeh    = 0
@@ -198,12 +187,6 @@ Citizen.CreateThread(function()
                 isDriver   = (seat == -1)
 
                 if veh == lastExitedVeh then
-                    -- Gleiches Fzg: Config + Töne sind noch gültig, nicht neu bauen
-                    -- Gleiches Fahrzeug wieder betreten → State wiederherstellen.
-                    -- RACE CONDITION FIX: vehicle.lua läuft mit 500ms, main.lua
-                    -- mit 300ms. Wir spawnen einen eigenen Thread der 600ms wartet
-                    -- (> 500ms) damit vehicle.lua suppressReset gesetzt + seinen
-                    -- Tick fertig hat bevor wir setSiren/setLights triggern.
                     local savedSirenIdx = state.sirenIndex
                     local savedLightsOn = state.lightsOn
                     local savedVeh      = veh

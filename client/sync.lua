@@ -1,28 +1,6 @@
 -- ============================================================
---  D4rk Smart Siren – Client / sync.lua  [KORRIGIERT v2]
+--  D4rk Smart Siren – Client / sync.lua 
 -- ============================================================
---
--- Warum dieser Code nach isNetwork=true (vehicle.lua) noch existiert:
---
--- PlaySoundFromEntity(..., isNetwork=true, ...) lässt FiveM/GTA den Ton
--- automatisch an alle Clients in Audio-Reichweite senden.
--- Das ersetzt den manuellen Remote-Sound für Spieler in der Nähe.
---
--- Dieser Handler wird aber noch benötigt für:
---
---   1. DLC/Server-Sided Banks (RequestScriptAudioBank) – muss auf JEDEM
---      Client geladen sein, bevor der isNetwork-Sound empfangen werden kann.
---      Ohne diesen Call: kein Ton bei fk-1997 / WMServerSirens etc.
---
---   2. Spieler die NEU in den Bereich joinen nachdem die Sirene bereits
---      lief (isNetwork-Sound ist dann schon weg, State wird neu gesetzt).
---
---   3. SetVehicleSiren / SetVehicleHasMutedSirens korrekt setzen, damit
---      Notlichter blinken und kein nativer GTA-Ton durchkommt.
---
--- Kein eigenes PlaySoundFromEntity mehr nötig:
---   Der Ton kommt via isNetwork=true vom Fahrer automatisch.
---   Ein zweites PlaySoundFromEntity hier wäre eine Überlagerung.
 
 -- ── Siren-Sync von anderen Spielern ──────────────────────────
 RegisterNetEvent('smartsiren:client:remoteSiren')
@@ -45,9 +23,6 @@ AddEventHandler('smartsiren:client:remoteSiren', function(netId, toneEntry)
         local siren = Config.Sirens[toneEntry]
         if not siren then return end
 
-        -- DLC/Server-Sided Bank auf diesem Client vorladen.
-        -- PFLICHT für alle Server-Sided Sounds (fk-1997, WMServerSirens, etc.).
-        -- Ohne diesen Call empfängt der Client den isNetwork-Ton nicht.
         if type(siren.Ref) == 'string' and siren.Ref ~= '' then
             RequestScriptAudioBank(siren.Ref, false)
         end
